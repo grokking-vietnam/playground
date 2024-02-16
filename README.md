@@ -1,2 +1,2 @@
-# playground
-Building a playground for highlt-skilled software engineer in Vietnam!
+# Grokking Playground
+Building a playground for highly-skilled software engineers in Vietnam!
