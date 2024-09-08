@@ -1,0 +1,12 @@
+name: iac
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Infrastructure as code
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: ""
+backend:
+  url: https://api.pulumi.com

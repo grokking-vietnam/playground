@@ -1,0 +1,8 @@
+config:
+  iac:backendPort: "3000"
+  iac:frontendPort: "3001"
+  iac:mongoPort: "27017"
+  iac:mongoHost: mongodb://mongo:27017
+  iac:database: cart
+  iac:nodeEnvironment: development
+  iac:protocol: http://
