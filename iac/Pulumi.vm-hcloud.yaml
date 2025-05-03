@@ -1,5 +1,3 @@
 config:
-  hcloud:token:
-    secure: ******
   iac:network_ip_range: 10.0.0.0/16
   iac:network_subnet_dmz_ip_range: 10.0.1.0/24
