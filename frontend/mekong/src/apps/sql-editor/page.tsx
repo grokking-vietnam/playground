@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import Editor from "@monaco-editor/react"
+import { EnhancedSQLEditor } from "./components/editor/EnhancedSQLEditor"
+import { EditorStatusBar } from "./components/editor/EditorStatusBar"
+import { EditorSettingsDropdown } from "./components/editor/EditorSettings"
+import type { EditorSettings, DatabaseSchema } from "./types"
+import * as monaco from 'monaco-editor'
 import {
   Search,
   Plus,
@@ -170,6 +175,21 @@ export default function SqlEditorApp() {
   const [sqlAutocomplete, setSqlAutocomplete] = useState(true)
   const [queryMode, setQueryMode] = useState("standard") // "standard", "batch", "streaming"
   const [enableSqlTranslation, setEnableSqlTranslation] = useState(false)
+
+  // Enhanced editor state
+  const [editorSettings, setEditorSettings] = useState<EditorSettings>({
+    fontSize: 14,
+    tabSize: 2,
+    wordWrap: true,
+    minimap: false,
+    lineNumbers: true,
+    autoComplete: true,
+    syntaxHighlighting: true,
+    errorHighlighting: true,
+    formatOnType: false
+  })
+  const [validationErrors, setValidationErrors] = useState<monaco.editor.IMarkerData[]>([])
+  const [currentSchema, setCurrentSchema] = useState<DatabaseSchema | null>(null)
 
   // Helper functions for query tabs
   const getCurrentQueryTab = () => {
@@ -393,6 +413,19 @@ export default function SqlEditorApp() {
 
   const getCurrentEngine = () => {
     return availableEngines.find(e => e.id === selectedEngine) || availableEngines[0]
+  }
+
+  // Enhanced editor handlers
+  const handleEditorSettingsChange = (newSettings: Partial<EditorSettings>) => {
+    setEditorSettings(prev => ({ ...prev, ...newSettings }))
+  }
+
+  const handleValidationChange = (errors: monaco.editor.IMarkerData[]) => {
+    setValidationErrors(errors)
+  }
+
+  const handleSchemaUpdate = (schema: DatabaseSchema | null) => {
+    setCurrentSchema(schema)
   }
 
   return (
@@ -947,6 +980,11 @@ export default function SqlEditorApp() {
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule
                 </Button>
+
+                <EditorSettingsDropdown
+                  settings={editorSettings}
+                  onSettingsChange={handleEditorSettingsChange}
+                />
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -963,8 +1001,8 @@ export default function SqlEditorApp() {
                     </DropdownMenuItem>
                     
                     <DropdownMenuCheckboxItem
-                      checked={sqlAutocomplete}
-                      onCheckedChange={setSqlAutocomplete}
+                      checked={editorSettings.autoComplete}
+                      onCheckedChange={(checked) => handleEditorSettingsChange({ autoComplete: checked })}
                     >
                       <div className="flex flex-col">
                         <span>SQL autocomplete</span>
@@ -1046,13 +1084,11 @@ export default function SqlEditorApp() {
             </div>
           </div>
 
-          {/* 4. Query Editor using Monaco Editor */}
+          {/* 4. Enhanced Query Editor using Monaco Editor */}
           <div id="query-editor" className="h-64 border-b border-gray-200">
-            <div className="h-full flex">
+            <div className="h-full flex flex-col">
               <div className="flex-1">
-                <Editor
-                  height="100%"
-                  defaultLanguage="sql"
+                <EnhancedSQLEditor
                   value={getCurrentQueryTab()?.query || ""}
                   onChange={(value) => {
                     const currentTab = getCurrentQueryTab()
@@ -1062,20 +1098,24 @@ export default function SqlEditorApp() {
                       setSqlQuery(value || "")
                     }
                   }}
-                  theme="vs"
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    lineNumbers: 'on',
-                    roundedSelection: false,
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    tabSize: 2,
-                    insertSpaces: true,
-                    wordWrap: 'on',
-                  }}
+                  engine={getCurrentEngine()}
+                  connectionId={`${selectedEngine}-${selectedProject}`}
+                  height="100%"
+                  settings={editorSettings}
+                  onValidationChange={handleValidationChange}
+                  onSchemaUpdate={handleSchemaUpdate}
                 />
               </div>
+              
+              {/* Editor Status Bar */}
+              <EditorStatusBar
+                errors={validationErrors}
+                lineCount={(getCurrentQueryTab()?.query || "").split('\n').length}
+                characterCount={(getCurrentQueryTab()?.query || "").length}
+                engine={getCurrentEngine().name}
+                connectionStatus={currentSchema ? 'connected' : 'disconnected'}
+                schemaLastUpdated={currentSchema?.lastUpdated}
+              />
             </div>
           </div>
 
