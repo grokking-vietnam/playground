@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "MICROFRONTEND": "@MICROFRONTEND",
+    "SHELL_URL": "@SHELL_URL",
+    "USER_MANAGEMENT_URL": "@USER_MANAGEMENT_URL",
+    "PERMISSION_CONTROL_URL": "@PERMISSION_CONTROL_URL",
+    "WORKFLOW_MANAGEMENT_URL": "@WORKFLOW_MANAGEMENT_URL",
+    "BIGQUERY_URL": "@BIGQUERY_URL"
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

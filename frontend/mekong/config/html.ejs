@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mekong - Composable Data Workspace</title>
+    <meta name="description" content="Enterprise data platform with microfrontend architecture" />
+    <% for (file of compilation.chunks.filter(chunk => chunk.isOnlyInitial()).map(chunk => chunk.files).reduce((acc, val) => acc.concat(val), []).filter(file => /\.css$/.test(file))) { %>
+    <link rel="stylesheet" href="<%= file %>" />
+    <% } %>
+</head>
+<body>
+    <div id="root"></div>
+    <% for (file of compilation.chunks.filter(chunk => chunk.isOnlyInitial()).map(chunk => chunk.files).reduce((acc, val) => acc.concat(val), []).filter(file => /\.js$/.test(file))) { %>
+    <script src="<%= file %>"></script>
+    <% } %>
+</body>
+</html>
