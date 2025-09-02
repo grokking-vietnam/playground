@@ -40,6 +40,6 @@ declare namespace NodeJS {
     USER_MANAGEMENT_URL?: string;
     PERMISSION_CONTROL_URL?: string;
     WORKFLOW_MANAGEMENT_URL?: string;
-    BIGQUERY_URL?: string;
+    SQL_EDITOR_URL?: string;
   }
 }

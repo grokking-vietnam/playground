@@ -30,6 +30,6 @@ export default defineConfig({
     'process.env.USER_MANAGEMENT_URL': JSON.stringify(process.env.USER_MANAGEMENT_URL || 'http://localhost:3002'),
     'process.env.PERMISSION_CONTROL_URL': JSON.stringify(process.env.PERMISSION_CONTROL_URL || 'http://localhost:3003'),
     'process.env.WORKFLOW_MANAGEMENT_URL': JSON.stringify(process.env.WORKFLOW_MANAGEMENT_URL || 'http://localhost:3004'),
-    'process.env.BIGQUERY_URL': JSON.stringify(process.env.BIGQUERY_URL || 'http://localhost:3005'),
+    'process.env.SQL_EDITOR_URL': JSON.stringify(process.env.SQL_EDITOR_URL || 'http://localhost:3005'),
   },
 });

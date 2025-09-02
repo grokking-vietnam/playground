@@ -78,8 +78,8 @@ export default function HomePage() {
     },
     {
       id: "run-query",
-      title: "Run a query in BigQuery", 
-      description: "Execute SQL queries on your data",
+      title: "Run SQL queries", 
+      description: "Execute SQL queries across multiple engines",
       icon: <Database className="h-5 w-5" />,
       action: "query"
     },
@@ -106,9 +106,9 @@ export default function HomePage() {
       title: "APIs & Services",
       services: [
         {
-          id: "bigquery",
-          name: "BigQuery",
-          description: "Enterprise data warehouse",
+          id: "sql-editor",
+          name: "SQL Editor",
+          description: "Multi-engine SQL query platform",
           icon: <Database className="h-5 w-5 text-blue-600" />,
           category: "Data & Analytics"
         },

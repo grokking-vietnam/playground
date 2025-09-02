@@ -13,7 +13,7 @@ A modern microfrontend application built with Modern.js, Umi, shadcn/ui, and Rsp
 
 ## Applications
 
-- **BigQuery Studio**: Enterprise data platform with SQL query capabilities
+- **SQL Editor**: Multi-engine SQL query platform with support for BigQuery, MySQL, PostgreSQL, and Spark SQL
 - **User Management**: Manage users, roles, and permissions
 - **Permission Control**: Configure access controls and security policies
 - **Workflow Management**: Design and manage business workflows
@@ -58,7 +58,7 @@ pnpm start
 ```
 src/
 ├── apps/                    # Microfrontend applications
-│   ├── bigquery/           # BigQuery Studio app
+│   ├── sql-editor/         # SQL Editor app
 │   ├── user-management/    # User Management app
 │   ├── permission-control/ # Permission Control app
 │   ├── workflow-management/# Workflow Management app
@@ -94,7 +94,7 @@ SHELL_URL=http://localhost:3000
 USER_MANAGEMENT_URL=http://localhost:3001
 PERMISSION_CONTROL_URL=http://localhost:3002
 WORKFLOW_MANAGEMENT_URL=http://localhost:3003
-BIGQUERY_URL=http://localhost:3004
+SQL_EDITOR_URL=http://localhost:3005
 ```
 
 ### Rspack Configuration

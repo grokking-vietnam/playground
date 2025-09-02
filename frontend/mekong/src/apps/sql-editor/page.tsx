@@ -89,19 +89,56 @@ interface QueryTab {
   isUnsaved: boolean
 }
 
-export default function BigQueryConsoleApp() {
+interface DatabaseEngine {
+  id: string
+  name: string
+  dialect: string
+  icon: React.ReactNode
+}
+
+export default function SqlEditorApp() {
+  // Available database engines
+  const [availableEngines] = useState<DatabaseEngine[]>([
+    { 
+      id: "bigquery", 
+      name: "BigQuery", 
+      dialect: "bigquery", 
+      icon: <Database className="h-4 w-4" />
+    },
+    { 
+      id: "mysql", 
+      name: "MySQL", 
+      dialect: "mysql", 
+      icon: <Database className="h-4 w-4" />
+    },
+    { 
+      id: "postgresql", 
+      name: "PostgreSQL", 
+      dialect: "postgresql", 
+      icon: <Database className="h-4 w-4" />
+    },
+    { 
+      id: "spark", 
+      name: "Spark SQL", 
+      dialect: "sparksql", 
+      icon: <Zap className="h-4 w-4" />
+    },
+  ])
+  
+  const [selectedEngine, setSelectedEngine] = useState("bigquery")
+  
   // Query tabs state
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
-    { id: "tab-1", name: "Untitled query", query: "select 1+1", isUnsaved: false }
+    { id: "tab-1", name: "Untitled query", query: "SELECT 1+1", isUnsaved: false }
   ])
   const [activeQueryTabId, setActiveQueryTabId] = useState("tab-1")
   
   // Legacy state (for backward compatibility)
-  const [sqlQuery, setSqlQuery] = useState(`select 1+1`)
+  const [sqlQuery, setSqlQuery] = useState(`SELECT 1+1`)
 
   const [queryResults, setQueryResults] = useState<any[]>([])
   const [isRunning, setIsRunning] = useState(false)
-  const [selectedProject, setSelectedProject] = useState("logsys-1276")
+  const [selectedProject, setSelectedProject] = useState("default-project")
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("results")
   const [showStarredOnly, setShowStarredOnly] = useState(false)
@@ -113,15 +150,15 @@ export default function BigQueryConsoleApp() {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true)
   const [searchBoxWidth, setSearchBoxWidth] = useState(Math.floor(window.innerWidth / 3))
   const [collapsedSections, setCollapsedSections] = useState({
-    pipelines: false,
-    governance: false,
+    queries: false,
     administration: false,
+    tools: false,
     migration: false
   })
   const [jobHistory, setJobHistory] = useState([
     {
       id: "job_123",
-      query: "select 1+1",
+      query: "SELECT 1+1",
       status: "completed",
       duration: "0.5 sec",
       timestamp: "2 minutes ago",
@@ -131,7 +168,7 @@ export default function BigQueryConsoleApp() {
 
   // More dropdown options state
   const [sqlAutocomplete, setSqlAutocomplete] = useState(true)
-  const [queryMode, setQueryMode] = useState("standard") // "standard", "optional-job", "continuous"
+  const [queryMode, setQueryMode] = useState("standard") // "standard", "batch", "streaming"
   const [enableSqlTranslation, setEnableSqlTranslation] = useState(false)
 
   // Helper functions for query tabs
@@ -150,7 +187,7 @@ export default function BigQueryConsoleApp() {
     const newTab: QueryTab = {
       id: newTabId,
       name: `Untitled query ${queryTabs.length + 1}`,
-      query: "",
+      query: getDefaultQuery(),
       isUnsaved: false
     }
     setQueryTabs(prev => [...prev, newTab])
@@ -169,25 +206,41 @@ export default function BigQueryConsoleApp() {
       return newTabs
     })
   }
+
+  // Get default query based on selected engine
+  const getDefaultQuery = () => {
+    const engine = availableEngines.find(e => e.id === selectedEngine)
+    switch (engine?.id) {
+      case "mysql":
+        return "SELECT 1+1 as result;"
+      case "postgresql":
+        return "SELECT 1+1 as result;"
+      case "spark":
+        return "SELECT 1+1 as result"
+      case "bigquery":
+      default:
+        return "SELECT 1+1"
+    }
+  }
   
-  // Mock data structure matching BigQuery console
+  // Mock data structure for database explorer
   const [projects, setProjects] = useState<Project[]>([
     {
-      id: "logsys-1276",
-      name: "logsys-1276",
+      id: "default-project",
+      name: "default-project",
       expanded: true,
       datasets: [
         {
-          id: "bigquery-public-data",
-          name: "bigquery-public-data", 
+          id: "sample-data",
+          name: "sample-data", 
           expanded: true,
           tables: [
-            { id: "austin_311", name: "austin_311", type: 'table', lastModified: "3 days ago" },
-            { id: "austin_bikeshare", name: "austin_bikeshare", type: 'table', lastModified: "5 days ago" },
-            { id: "austin_crime", name: "austin_crime", type: 'view', lastModified: "1 week ago" },
-            { id: "austin_incidents", name: "austin_incidents", type: 'table', lastModified: "2 days ago" },
-            { id: "austin_waste", name: "austin_waste", type: 'table', lastModified: "4 days ago" },
-            { id: "baseball", name: "baseball", type: 'external', lastModified: "1 week ago" },
+            { id: "customers", name: "customers", type: 'table', lastModified: "3 days ago" },
+            { id: "orders", name: "orders", type: 'table', lastModified: "5 days ago" },
+            { id: "products", name: "products", type: 'view', lastModified: "1 week ago" },
+            { id: "analytics", name: "analytics", type: 'table', lastModified: "2 days ago" },
+            { id: "logs", name: "logs", type: 'table', lastModified: "4 days ago" },
+            { id: "reports", name: "reports", type: 'external', lastModified: "1 week ago" },
           ]
         }
       ]
@@ -220,7 +273,7 @@ export default function BigQueryConsoleApp() {
     // Simulate query execution
     setTimeout(() => {
       setQueryResults([
-        { "f0_": 2 }
+        { "result": 2 }
       ])
       setIsRunning(false)
       setActiveTab("results")
@@ -267,9 +320,9 @@ export default function BigQueryConsoleApp() {
     console.log("Opening translation settings...")
   }
 
-  const createPySparkProcedure = () => {
-    // In a real app, this would open PySpark procedure creation dialog
-    console.log("Creating PySpark stored procedure...")
+  const createStoredProcedure = () => {
+    // In a real app, this would open stored procedure creation dialog
+    console.log("Creating stored procedure...")
   }
 
   // Handle resize functionality
@@ -338,11 +391,15 @@ export default function BigQueryConsoleApp() {
     }
   }
 
+  const getCurrentEngine = () => {
+    return availableEngines.find(e => e.id === selectedEngine) || availableEngines[0]
+  }
+
   return (
     <div className="flex h-full bg-white">
-      {/* 1. BigQuery App Sidebar */}
+      {/* 1. SQL Editor App Sidebar */}
       <div 
-        id="bigquery-app-sidebar" 
+        id="sql-editor-app-sidebar" 
         className={cn(
           "relative bg-card border-r flex flex-col py-4 transition-all duration-300 ease-in-out",
           isAppSidebarCollapsed ? "w-16 items-center" : "w-64 items-start"
@@ -358,10 +415,44 @@ export default function BigQueryConsoleApp() {
               <Database className="h-5 w-5 text-primary-foreground" />
             </div>
             {!isAppSidebarCollapsed && (
-              <span className="ml-3 text-lg font-semibold">BigQuery</span>
+              <span className="ml-3 text-lg font-semibold">SQL Editor</span>
             )}
           </div>
         </div>
+
+        {/* Engine Selector */}
+        {!isAppSidebarCollapsed && (
+          <div className="px-4 mb-4 w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <div className="flex items-center">
+                    {getCurrentEngine().icon}
+                    <span className="ml-2">{getCurrentEngine().name}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Select Database Engine</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableEngines.map((engine) => (
+                  <DropdownMenuItem
+                    key={engine.id}
+                    onClick={() => setSelectedEngine(engine.id)}
+                    className="flex items-center"
+                  >
+                    {engine.icon}
+                    <span className="ml-2">{engine.name}</span>
+                    {selectedEngine === engine.id && (
+                      <Check className="h-4 w-4 ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         {/* Navigation Sections */}
         <div className={cn(
@@ -371,19 +462,19 @@ export default function BigQueryConsoleApp() {
           {isAppSidebarCollapsed ? (
             /* Collapsed state - show icons only */
             <div className="flex flex-col space-y-2 items-center">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Studio">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Editor">
                 <Database className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Data transfers">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Dataform">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Version control">
                 <GitBranch className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Scheduled queries">
                 <Clock className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Scheduling">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Settings">
                 <Settings className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Sharing">
@@ -392,14 +483,14 @@ export default function BigQueryConsoleApp() {
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Monitoring">
                 <Eye className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="BI Engine">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent" title="Query optimizer">
                 <Brain className="h-5 w-5" />
               </Button>
             </div>
           ) : (
             /* Expanded state - show collapsible sections */
             <div className="space-y-4">
-              {/* Studio Section */}
+              {/* Editor Section */}
               <div>
                 <Button 
                   variant="secondary" 
@@ -407,26 +498,26 @@ export default function BigQueryConsoleApp() {
                   className="w-full justify-start mb-2 bg-primary/10 text-primary hover:bg-primary/20"
                 >
                   <Database className="h-4 w-4 mr-3" />
-                  Studio
+                  SQL Editor
                 </Button>
               </div>
 
-              {/* Pipelines & Integration */}
+              {/* Queries & Tools */}
               <div>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => toggleSection('pipelines')}
+                  onClick={() => toggleSection('queries')}
                   className="w-full justify-between text-sm font-medium text-foreground hover:bg-accent mb-1"
                 >
-                  <span>Pipelines & Integration</span>
-                  {collapsedSections.pipelines ? (
+                  <span>Queries & Tools</span>
+                  {collapsedSections.queries ? (
                     <ChevronRight className="h-4 w-4" />
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </Button>
-                {!collapsedSections.pipelines && (
+                {!collapsedSections.queries && (
                   <div className="ml-4 space-y-1">
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <ArrowLeft className="h-4 w-4 mr-3" />
@@ -434,7 +525,7 @@ export default function BigQueryConsoleApp() {
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <GitBranch className="h-4 w-4 mr-3" />
-                      Dataform
+                      Version control
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Clock className="h-4 w-4 mr-3" />
@@ -442,40 +533,7 @@ export default function BigQueryConsoleApp() {
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Settings className="h-4 w-4 mr-3" />
-                      Scheduling
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Governance */}
-              <div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => toggleSection('governance')}
-                  className="w-full justify-between text-sm font-medium text-foreground hover:bg-accent mb-1"
-                >
-                  <span>Governance</span>
-                  {collapsedSections.governance ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-                {!collapsedSections.governance && (
-                  <div className="ml-4 space-y-1">
-                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
-                      <Share className="h-4 w-4 mr-3" />
-                      Sharing (Analytics Hub)
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
-                      <Shield className="h-4 w-4 mr-3" />
-                      Policy tags
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
-                      <Database className="h-4 w-4 mr-3" />
-                      Metadata curation
+                      Query settings
                     </Button>
                   </div>
                 )}
@@ -500,27 +558,60 @@ export default function BigQueryConsoleApp() {
                   <div className="ml-4 space-y-1">
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Eye className="h-4 w-4 mr-3" />
-                      Monitoring
+                      Query monitoring
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Search className="h-4 w-4 mr-3" />
-                      Jobs explorer
+                      Query history
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Table className="h-4 w-4 mr-3" />
-                      Capacity management
+                      Resource management
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Brain className="h-4 w-4 mr-3" />
-                      BI Engine
+                      Query optimizer
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <RefreshCw className="h-4 w-4 mr-3" />
-                      Disaster recovery
+                      Backup & recovery
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Sparkles className="h-4 w-4 mr-3" />
-                      Recommendations
+                      Performance insights
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Tools */}
+              <div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => toggleSection('tools')}
+                  className="w-full justify-between text-sm font-medium text-foreground hover:bg-accent mb-1"
+                >
+                  <span>Tools</span>
+                  {collapsedSections.tools ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+                {!collapsedSections.tools && (
+                  <div className="ml-4 space-y-1">
+                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
+                      <Share className="h-4 w-4 mr-3" />
+                      Data sharing
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
+                      <Shield className="h-4 w-4 mr-3" />
+                      Security policies
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
+                      <Database className="h-4 w-4 mr-3" />
+                      Schema management
                     </Button>
                   </div>
                 )}
@@ -545,7 +636,7 @@ export default function BigQueryConsoleApp() {
                   <div className="ml-4 space-y-1">
                     <Button variant="ghost" size="sm" className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent">
                       <Workflow className="h-4 w-4 mr-3" />
-                      Services
+                      Migration services
                     </Button>
                   </div>
                 )}
@@ -558,8 +649,8 @@ export default function BigQueryConsoleApp() {
         {!isAppSidebarCollapsed && (
           <div className="mt-auto border-t pt-4 px-4 w-full pb-10">
             <div className="text-xs text-muted-foreground">
-              <div className="font-medium">BigQuery Studio</div>
-              <div className="mt-1">Google Cloud Platform</div>
+              <div className="font-medium">SQL Editor Studio</div>
+              <div className="mt-1">Multi-Engine SQL Platform</div>
             </div>
           </div>
         )}
@@ -638,7 +729,7 @@ export default function BigQueryConsoleApp() {
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search BigQuery resources"
+              placeholder="Search database resources"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-9"
@@ -844,7 +935,7 @@ export default function BigQueryConsoleApp() {
                 
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
-                  Download
+                  Export
                 </Button>
                 
                 <Button variant="outline" size="sm">
@@ -902,18 +993,18 @@ export default function BigQueryConsoleApp() {
                         </div>
                       </DropdownMenuRadioItem>
                       
-                      <DropdownMenuRadioItem value="optional-job">
+                      <DropdownMenuRadioItem value="batch">
                         <div className="flex flex-col">
-                          <span>Optional job creation</span>
+                          <span>Batch processing</span>
                           <span className="text-xs text-muted-foreground">
-                            Improve overall latency of short queries
+                            Optimized for large data processing
                           </span>
                         </div>
                       </DropdownMenuRadioItem>
                       
-                      <DropdownMenuRadioItem value="continuous">
+                      <DropdownMenuRadioItem value="streaming">
                         <div className="flex flex-col">
-                          <span>Continuous query</span>
+                          <span>Streaming query</span>
                           <span className="text-xs text-muted-foreground">
                             Process incoming data continuously
                           </span>
@@ -930,7 +1021,7 @@ export default function BigQueryConsoleApp() {
                       <div className="flex flex-col">
                         <span>Enable SQL translation</span>
                         <span className="text-xs text-muted-foreground">
-                          Offered by BigQuery Migration Service
+                          Cross-engine SQL compatibility
                         </span>
                       </div>
                     </DropdownMenuCheckboxItem>
@@ -945,9 +1036,9 @@ export default function BigQueryConsoleApp() {
                     
                     <DropdownMenuSeparator />
                     
-                    <DropdownMenuItem onClick={createPySparkProcedure}>
+                    <DropdownMenuItem onClick={createStoredProcedure}>
                       <Zap className="h-4 w-4 mr-2" />
-                      Create PySpark stored procedure
+                      Create stored procedure
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -994,7 +1085,7 @@ export default function BigQueryConsoleApp() {
               <div className="border-b border-gray-200">
                 <TabsList className="h-10 bg-transparent p-0 px-4">
                   <TabsTrigger value="job-info" className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none">
-                    Job information
+                    Query information
                   </TabsTrigger>
                   <TabsTrigger value="results" className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none">
                     Results
@@ -1016,7 +1107,7 @@ export default function BigQueryConsoleApp() {
 
               <TabsContent value="job-info" className="flex-1 m-0 p-4">
                 <div className="text-center text-gray-500">
-                  Job information will appear here after running a query
+                  Query information will appear here after running a query
                 </div>
               </TabsContent>
 
@@ -1029,14 +1120,14 @@ export default function BigQueryConsoleApp() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-600">Row</span>
-                            <span className="text-sm text-gray-600">f0_</span>
+                            <span className="text-sm text-gray-600">result</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="sm">
                               Save results
                             </Button>
                             <Button variant="ghost" size="sm">
-                              Open in
+                              Export to
                             </Button>
                           </div>
                         </div>
@@ -1051,7 +1142,7 @@ export default function BigQueryConsoleApp() {
                                 Row
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                f0_
+                                result
                               </th>
                             </tr>
                           </thead>
@@ -1062,7 +1153,7 @@ export default function BigQueryConsoleApp() {
                                   {index + 1}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {row.f0_}
+                                  {row.result}
                                 </td>
                               </tr>
                             ))}
@@ -1113,11 +1204,11 @@ export default function BigQueryConsoleApp() {
           </div>
         </div>
 
-        {/* 6. Job History */}
-        <div id="job-history" className="h-48 border-t border-gray-200 bg-gray-50">
+        {/* 6. Query History */}
+        <div id="query-history" className="h-48 border-t border-gray-200 bg-gray-50">
           <div className="h-full flex flex-col">
             <div className="p-3 border-b border-gray-200 bg-white flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900">Job history</h3>
+              <h3 className="text-sm font-medium text-gray-900">Query history</h3>
               <Button variant="ghost" size="sm">
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -1185,8 +1276,9 @@ export default function BigQueryConsoleApp() {
                   <h4 className="text-sm font-medium mb-2">Query information</h4>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div>Status: Ready to run</div>
+                    <div>Engine: {getCurrentEngine().name}</div>
                     <div>Processing location: {processingLocation}</div>
-                    <div>Bytes processed: 0 B</div>
+                    <div>Estimated cost: -</div>
                   </div>
                 </div>
                 <div>

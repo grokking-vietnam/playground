@@ -129,7 +129,7 @@ export default function PermissionControlApp() {
           <CardContent className="space-y-4">
             {[
               {
-                resource: "BigQuery Datasets",
+                resource: "SQL Database Tables",
                 protection: "High",
                 policies: 3,
                 status: "protected",
