@@ -4,8 +4,8 @@
  * Handles role-based access control and permission checking
  */
 
-import type { User, UserRole, Permission } from '../types/auth'
-import { ROLE_PERMISSIONS } from '../types/auth'
+import type { User } from '../types/auth'
+import { ROLE_PERMISSIONS, Permission, UserRole } from '../types/auth'
 
 export class PermissionService {
   

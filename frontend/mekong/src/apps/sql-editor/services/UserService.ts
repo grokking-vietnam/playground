@@ -6,7 +6,10 @@
 
 import type { 
   User, 
-  UserPreferences, 
+  UserPreferences,
+  EditorPreferences,
+  DashboardPreferences,
+  NotificationPreferences,
   UserProfileUpdate, 
   CreateUserData, 
   UserFilters,
@@ -299,6 +302,10 @@ export class UserService {
     return {
       ...currentUser,
       ...updates,
+      preferences: {
+        ...currentUser.preferences,
+        ...updates.preferences
+      },
       updatedAt: new Date().toISOString()
     }
   }
@@ -413,6 +420,10 @@ export class UserService {
     return {
       ...currentUser,
       ...updates,
+      preferences: {
+        ...currentUser.preferences,
+        ...updates.preferences
+      },
       updatedAt: new Date().toISOString()
     }
   }

@@ -4,7 +4,45 @@
  * User-related types for the SQL Editor application
  */
 
-import type { UserRole, UserPreferences } from './auth'
+import type { UserRole } from './auth'
+
+// User preferences types
+export interface EditorPreferences {
+  fontSize: number
+  tabSize: number
+  wordWrap: boolean
+  minimap: boolean
+  lineNumbers: boolean
+  autoComplete: boolean
+  formatOnSave: boolean
+  theme: string
+}
+
+export interface DashboardPreferences {
+  defaultView: 'grid' | 'list'
+  itemsPerPage: number
+  showPreviewPane: boolean
+  autoRefresh: boolean
+  refreshInterval: number
+}
+
+export interface NotificationPreferences {
+  queryCompletion: boolean
+  errorAlerts: boolean
+  systemMaintenance: boolean
+  emailNotifications: boolean
+  pushNotifications: boolean
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system'
+  language: string
+  dateFormat: string
+  timeFormat: '12h' | '24h'
+  editor: EditorPreferences
+  dashboard: DashboardPreferences
+  notifications: NotificationPreferences
+}
 
 // User entity
 export interface User {

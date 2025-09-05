@@ -150,20 +150,24 @@ export interface AuthContextType extends AuthState {
   clearError: () => void
 }
 
-// User type (imported from user.ts but defined here for convenience)
+// User type (imports from user.ts)
 export interface User {
   id: string
   email: string
   name: string
+  firstName: string
+  lastName: string
   avatar?: string
   role: UserRole
   preferences: UserPreferences
   createdAt: string
+  updatedAt: string
   lastLoginAt?: string
   isActive: boolean
+  emailVerified: boolean
 }
 
-// User preferences
+// User preferences (re-exported from user.ts for convenience)
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
   language: string
