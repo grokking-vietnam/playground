@@ -5,6 +5,7 @@
  */
 
 import type { LoginCredentials, JWTToken, PasswordResetRequest, PasswordResetConfirm, User } from '../types/auth'
+import { UserRole } from '../types/auth'
 import { tokenManager } from './TokenManager'
 import { eventBus, EVENT_TYPES } from '@/lib/event-bus'
 
@@ -182,9 +183,9 @@ export class AuthService {
       name: this.getNameFromEmail(credentials.email),
       firstName: this.getNameFromEmail(credentials.email).split(' ')[0],
       lastName: this.getNameFromEmail(credentials.email).split(' ')[1] || '',
-      role: credentials.email.includes('admin') ? 'admin' : 
-            credentials.email.includes('editor') ? 'editor' :
-            credentials.email.includes('analyst') ? 'analyst' : 'viewer',
+      role: credentials.email.includes('admin') ? UserRole.ADMIN : 
+            credentials.email.includes('editor') ? UserRole.EDITOR :
+            credentials.email.includes('analyst') ? UserRole.ANALYST : UserRole.VIEWER,
       preferences: this.getDefaultPreferences(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

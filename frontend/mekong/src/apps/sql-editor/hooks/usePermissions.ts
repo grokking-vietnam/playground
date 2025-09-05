@@ -7,7 +7,7 @@
 import { useMemo } from 'react'
 import { useAuth } from './useAuth'
 import { permissionService } from '../services/PermissionService'
-import type { Permission, UserRole } from '../types/auth'
+import { Permission, UserRole } from '../types/auth'
 
 export function usePermissions() {
   const { user } = useAuth()
@@ -57,42 +57,42 @@ export function usePermissions() {
     return permissionService.canPerformBulkOperations(user, operation)
   }
 
-  const isAdmin = useMemo(() => hasRole('admin'), [user])
-  const isEditor = useMemo(() => hasRole('editor'), [user])
-  const isAnalyst = useMemo(() => hasRole('analyst'), [user])
-  const isViewer = useMemo(() => hasRole('viewer'), [user])
+  const isAdmin = useMemo(() => hasRole(UserRole.ADMIN), [user])
+  const isEditor = useMemo(() => hasRole(UserRole.EDITOR), [user])
+  const isAnalyst = useMemo(() => hasRole(UserRole.ANALYST), [user])
+  const isViewer = useMemo(() => hasRole(UserRole.VIEWER), [user])
 
   // Common permission checks
   const can = useMemo(() => ({
     // Query permissions
-    createQueries: hasPermission('query:create'),
-    readQueries: hasPermission('query:read'),
-    updateQueries: hasPermission('query:update'),
-    deleteQueries: hasPermission('query:delete'),
-    executeQueries: hasPermission('query:execute'),
+    createQueries: hasPermission(Permission.QUERY_CREATE),
+    readQueries: hasPermission(Permission.QUERY_READ),
+    updateQueries: hasPermission(Permission.QUERY_UPDATE),
+    deleteQueries: hasPermission(Permission.QUERY_DELETE),
+    executeQueries: hasPermission(Permission.QUERY_EXECUTE),
     
     // Connection permissions
-    createConnections: hasPermission('connection:create'),
-    readConnections: hasPermission('connection:read'),
-    updateConnections: hasPermission('connection:update'),
-    deleteConnections: hasPermission('connection:delete'),
-    testConnections: hasPermission('connection:test'),
+    createConnections: hasPermission(Permission.CONNECTION_CREATE),
+    readConnections: hasPermission(Permission.CONNECTION_READ),
+    updateConnections: hasPermission(Permission.CONNECTION_UPDATE),
+    deleteConnections: hasPermission(Permission.CONNECTION_DELETE),
+    testConnections: hasPermission(Permission.CONNECTION_TEST),
     
     // User management permissions
-    createUsers: hasPermission('user:create'),
-    readUsers: hasPermission('user:read'),
-    updateUsers: hasPermission('user:update'),
-    deleteUsers: hasPermission('user:delete'),
+    createUsers: hasPermission(Permission.USER_CREATE),
+    readUsers: hasPermission(Permission.USER_READ),
+    updateUsers: hasPermission(Permission.USER_UPDATE),
+    deleteUsers: hasPermission(Permission.USER_DELETE),
     
     // System permissions
-    accessSystemSettings: hasPermission('system:settings'),
-    viewSystemMonitoring: hasPermission('system:monitoring'),
-    performSystemBackup: hasPermission('system:backup'),
+    accessSystemSettings: hasPermission(Permission.SYSTEM_SETTINGS),
+    viewSystemMonitoring: hasPermission(Permission.SYSTEM_MONITORING),
+    performSystemBackup: hasPermission(Permission.SYSTEM_BACKUP),
     
     // Data permissions
-    exportData: hasPermission('data:export'),
-    importData: hasPermission('data:import'),
-    shareData: hasPermission('data:share')
+    exportData: hasPermission(Permission.DATA_EXPORT),
+    importData: hasPermission(Permission.DATA_IMPORT),
+    shareData: hasPermission(Permission.DATA_SHARE)
   }), [user])
 
   return {
