@@ -7,6 +7,12 @@
 // Connection types
 export * from './connections'
 
+// Authentication types
+export * from './auth'
+
+// User types  
+export * from './user'
+
 // Re-export commonly used types for convenience
 export type {
   DatabaseConnection,
@@ -22,3 +28,22 @@ export {
   ENGINE_DISPLAY_NAMES,
   CONNECTION_STRING_TEMPLATES
 } from './connections'
+
+// Re-export auth types
+export type {
+  User,
+  JWTToken,
+  LoginCredentials,
+  AuthState,
+  AuthContextType,
+  UserPreferences,
+  EditorPreferences,
+  DashboardPreferences,
+  NotificationPreferences
+} from './auth'
+
+export {
+  UserRole,
+  Permission,
+  ROLE_PERMISSIONS
+} from './auth'

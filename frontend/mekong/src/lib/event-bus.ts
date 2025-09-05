@@ -58,6 +58,25 @@ export const EVENT_TYPES = {
   NAVIGATION_REQUEST: 'navigation.request',
   DATA_UPDATED: 'data.updated',
   THEME_CHANGED: 'theme.changed',
+  
+  // Authentication events
+  AUTH_LOGIN: 'auth.login',
+  AUTH_LOGOUT: 'auth.logout',
+  AUTH_TOKEN_REFRESHED: 'auth.token.refreshed',
+  AUTH_SESSION_EXPIRED: 'auth.session.expired',
+  
+  // User events
+  USER_PROFILE_UPDATED: 'user.profile.updated',
+  USER_PREFERENCES_UPDATED: 'user.preferences.updated',
+  USER_PASSWORD_CHANGED: 'user.password.changed',
+  USER_SESSION_TERMINATED: 'user.session.terminated',
+  USER_CREATED: 'user.created',
+  USER_UPDATED: 'user.updated',
+  USER_DELETED: 'user.deleted',
+  
+  // Permission events
+  PERMISSIONS_CHANGED: 'permissions.changed',
+  ROLE_UPDATED: 'role.updated',
 } as const
 
 export type EventType = typeof EVENT_TYPES[keyof typeof EVENT_TYPES]
