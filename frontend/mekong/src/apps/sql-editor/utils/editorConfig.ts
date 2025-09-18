@@ -3,7 +3,7 @@
  */
 
 import * as monaco from 'monaco-editor';
-import type { EditorSettings } from '../types/editor';
+import type { EditorSettings } from '../types';
 
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   fontSize: 14,

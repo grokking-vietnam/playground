@@ -2,7 +2,8 @@
  * SQL dialect configurations for different database engines
  */
 
-import type { SQLFunction, SQLLanguageConfig } from '../types/editor';
+import type { SQLFunction, SQLLanguageConfig } from '../types';
+import { DatabaseEngine } from '../types/connections';
 
 export const SQL_KEYWORDS = {
   COMMON: [
@@ -194,14 +195,14 @@ export const SQL_OPERATORS = {
   SPARK: ['<<=', '>>=', '&', '|', '^', '~']
 };
 
-export function getDialectConfig(engineId: string): Partial<SQLLanguageConfig> {
+export function getDialectConfig(engine: DatabaseEngine): Partial<SQLLanguageConfig> {
   const baseKeywords = SQL_KEYWORDS.COMMON;
   const baseDataTypes = SQL_DATA_TYPES.COMMON;
   const baseFunctions = SQL_FUNCTIONS.COMMON;
   const baseOperators = SQL_OPERATORS.COMMON;
 
-  switch (engineId.toLowerCase()) {
-    case 'bigquery':
+  switch (engine) {
+    case DatabaseEngine.BIGQUERY:
       return {
         keywords: [...baseKeywords, ...SQL_KEYWORDS.BIGQUERY],
         dataTypes: [...baseDataTypes, ...SQL_DATA_TYPES.BIGQUERY],
@@ -209,7 +210,7 @@ export function getDialectConfig(engineId: string): Partial<SQLLanguageConfig> {
         operators: [...baseOperators, ...SQL_OPERATORS.BIGQUERY]
       };
       
-    case 'mysql':
+    case DatabaseEngine.MYSQL:
       return {
         keywords: [...baseKeywords, ...SQL_KEYWORDS.MYSQL],
         dataTypes: [...baseDataTypes, ...SQL_DATA_TYPES.MYSQL],
@@ -217,7 +218,7 @@ export function getDialectConfig(engineId: string): Partial<SQLLanguageConfig> {
         operators: [...baseOperators, ...SQL_OPERATORS.MYSQL]
       };
       
-    case 'postgresql':
+    case DatabaseEngine.POSTGRESQL:
       return {
         keywords: [...baseKeywords, ...SQL_KEYWORDS.POSTGRESQL],
         dataTypes: [...baseDataTypes, ...SQL_DATA_TYPES.POSTGRESQL],
@@ -225,8 +226,7 @@ export function getDialectConfig(engineId: string): Partial<SQLLanguageConfig> {
         operators: [...baseOperators, ...SQL_OPERATORS.POSTGRESQL]
       };
       
-    case 'spark':
-    case 'sparksql':
+    case DatabaseEngine.SPARK_SQL:
       return {
         keywords: [...baseKeywords, ...SQL_KEYWORDS.SPARK],
         dataTypes: [...baseDataTypes, ...SQL_DATA_TYPES.SPARK],

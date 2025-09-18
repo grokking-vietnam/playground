@@ -133,7 +133,6 @@ export default function SqlEditorApp() {
   // Legacy state (for backward compatibility)
   const [sqlQuery, setSqlQuery] = useState(`SELECT 1+1`)
   const [selectedEngine, setSelectedEngine] = useState(DatabaseEngine.BIGQUERY)
-  const [selectedProject, setSelectedProject] = useState("default-project")
 
   const [queryResults, setQueryResults] = useState<any[]>([])
   const [isRunning, setIsRunning] = useState(false)

@@ -11,7 +11,7 @@ import type {
   HoverContext,
   ValidationContext,
   SQLFunction
-} from '../types/editor';
+} from '../types';
 import { SchemaProvider } from './SchemaProvider';
 import { SQLFormatter } from './SQLFormatter';
 import { SQLValidator } from './SQLValidator';
@@ -105,7 +105,7 @@ export class SQLLanguageService {
    * Configure SQL language tokens and syntax highlighting
    */
   private configureSQLLanguage(): void {
-    const dialectConfig = getDialectConfig(this.currentEngine.dialect);
+    const dialectConfig = getDialectConfig(this.currentEngine);
     
     monaco.languages.setLanguageConfiguration('sql', {
       comments: {
@@ -215,7 +215,7 @@ export class SQLLanguageService {
     const suggestions: monaco.languages.CompletionItem[] = [];
 
     // Get dialect configuration
-    const dialectConfig = getDialectConfig(engine.dialect);
+    const dialectConfig = getDialectConfig(engine);
 
     // Add keywords
     if (dialectConfig.keywords) {
@@ -324,7 +324,7 @@ export class SQLLanguageService {
     const wordValue = word.word.toLowerCase();
 
     // Check for function information
-    const dialectConfig = getDialectConfig(engine.dialect);
+    const dialectConfig = getDialectConfig(engine);
     const func = dialectConfig.functions?.find(f => f.name.toLowerCase() === wordValue);
     
     if (func) {
@@ -404,7 +404,7 @@ export class SQLLanguageService {
     if (!match) return null;
 
     const funcName = match[1].toLowerCase();
-    const dialectConfig = getDialectConfig(engine.dialect);
+    const dialectConfig = getDialectConfig(engine);
     const func = dialectConfig.functions?.find(f => f.name.toLowerCase() === funcName);
 
     if (!func) return null;

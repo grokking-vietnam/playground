@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Settings2, Type, Eye, Zap, Palette } from 'lucide-react';
-import type { EditorSettings } from '../../types/editor';
+import type { EditorSettings } from '../../types';
 import { DEFAULT_EDITOR_SETTINGS } from '../../utils/editorConfig';
 
 export interface EditorSettingsProps {

@@ -5,14 +5,10 @@
 import { SQLLanguageService } from '../../services/SQLLanguageService';
 import { SchemaProvider } from '../../services/SchemaProvider';
 import { getDialectConfig } from '../../utils/sqlDialects';
+import { DatabaseEngine } from '../../types/connections';
 
 describe('SQLLanguageService', () => {
-  const mockEngine = {
-    id: 'bigquery',
-    name: 'BigQuery',
-    dialect: 'bigquery',
-    icon: null
-  };
+  const mockEngine = DatabaseEngine.BIGQUERY;
 
   let languageService: SQLLanguageService;
   let schemaProvider: SchemaProvider;
@@ -31,7 +27,7 @@ describe('SQLLanguageService', () => {
   });
 
   test('should get dialect configuration for BigQuery', () => {
-    const config = getDialectConfig('bigquery');
+    const config = getDialectConfig(DatabaseEngine.BIGQUERY);
     
     expect(config.keywords).toContain('SELECT');
     expect(config.keywords).toContain('STRUCT');
@@ -40,9 +36,9 @@ describe('SQLLanguageService', () => {
   });
 
   test('should provide different configurations for different engines', () => {
-    const bigQueryConfig = getDialectConfig('bigquery');
-    const mysqlConfig = getDialectConfig('mysql');
-    const postgresConfig = getDialectConfig('postgresql');
+    const bigQueryConfig = getDialectConfig(DatabaseEngine.BIGQUERY);
+    const mysqlConfig = getDialectConfig(DatabaseEngine.MYSQL);
+    const postgresConfig = getDialectConfig(DatabaseEngine.POSTGRESQL);
 
     // BigQuery specific
     expect(bigQueryConfig.keywords).toContain('STRUCT');
@@ -58,12 +54,7 @@ describe('SQLLanguageService', () => {
   });
 
   test('should update engine correctly', () => {
-    const newEngine = {
-      id: 'mysql',
-      name: 'MySQL',
-      dialect: 'mysql',
-      icon: null
-    };
+    const newEngine = DatabaseEngine.MYSQL;
 
     expect(() => {
       languageService.updateEngine(newEngine);

@@ -3,14 +3,10 @@
  */
 
 import { SQLFormatter } from '../../services/SQLFormatter';
+import { DatabaseEngine } from '../../types/connections';
 
 describe('SQLFormatter', () => {
-  const mockEngine = {
-    id: 'bigquery',
-    name: 'BigQuery',
-    dialect: 'bigquery',
-    icon: null
-  };
+  const mockEngine = DatabaseEngine.BIGQUERY;
 
   let formatter: SQLFormatter;
 

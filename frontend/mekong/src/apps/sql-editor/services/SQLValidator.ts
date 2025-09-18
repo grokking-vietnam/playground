@@ -3,7 +3,8 @@
  */
 
 import * as monaco from 'monaco-editor';
-import type { DatabaseEngine, DatabaseSchema } from '../types/editor';
+import type { DatabaseSchema } from '../types';
+import { DatabaseEngine } from '../types/connections';
 
 export interface SQLValidationError {
   message: string;
@@ -177,7 +178,7 @@ export class SQLValidator {
       
       // Check for SELECT without FROM (except for certain engines)
       if (line.startsWith('SELECT') && !line.includes(' FROM ') && 
-          engine.dialect !== 'bigquery' && !line.includes('SELECT 1')) {
+          engine !== DatabaseEngine.BIGQUERY && !line.includes('SELECT 1')) {
         const fromIndex = lines.slice(lineNum).findIndex(l => 
           l.trim().toUpperCase().startsWith('FROM'));
         
@@ -281,17 +282,17 @@ export class SQLValidator {
   ): SQLValidationError[] {
     const errors: SQLValidationError[] = [];
 
-    switch (engine.dialect) {
-      case 'bigquery':
+    switch (engine) {
+      case DatabaseEngine.BIGQUERY:
         errors.push(...this.validateBigQuery(lines));
         break;
-      case 'mysql':
+      case DatabaseEngine.MYSQL:
         errors.push(...this.validateMySQL(lines));
         break;
-      case 'postgresql':
+      case DatabaseEngine.POSTGRESQL:
         errors.push(...this.validatePostgreSQL(lines));
         break;
-      case 'sparksql':
+      case DatabaseEngine.SPARK_SQL:
         errors.push(...this.validateSparkSQL(lines));
         break;
     }

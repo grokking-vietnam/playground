@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor';
-import type { DatabaseEngine } from '../types/editor';
+import type { DatabaseEngine } from '../types/connections';
 
 export interface SQLFormatOptions {
   indentSize: number;
