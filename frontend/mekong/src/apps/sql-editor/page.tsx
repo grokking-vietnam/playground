@@ -21,6 +21,18 @@ import { EditorStatusBar } from "./components/editor/EditorStatusBar"
 import { EditorSettingsDropdown } from "./components/editor/EditorSettings"
 import type { EditorSettings, DatabaseSchema } from "./types"
 import * as monaco from 'monaco-editor'
+
+// Import connection management components and hooks
+import { useConnections } from "./hooks/useConnections"
+import { ConnectionForm } from "./components/connections/ConnectionForm"
+import { ConnectionList } from "./components/connections/ConnectionList"
+import { ConnectionStatus } from "./components/connections/ConnectionStatus"
+import { 
+  DatabaseConnection, 
+  ConnectionFormData, 
+  ENGINE_DISPLAY_NAMES,
+  DatabaseEngine 
+} from "./types"
 import {
   Search,
   Plus,
@@ -94,43 +106,23 @@ interface QueryTab {
   isUnsaved: boolean
 }
 
-interface DatabaseEngine {
-  id: string
-  name: string
-  dialect: string
-  icon: React.ReactNode
-}
-
 export default function SqlEditorApp() {
-  // Available database engines
-  const [availableEngines] = useState<DatabaseEngine[]>([
-    { 
-      id: "bigquery", 
-      name: "BigQuery", 
-      dialect: "bigquery", 
-      icon: <Database className="h-4 w-4" />
-    },
-    { 
-      id: "mysql", 
-      name: "MySQL", 
-      dialect: "mysql", 
-      icon: <Database className="h-4 w-4" />
-    },
-    { 
-      id: "postgresql", 
-      name: "PostgreSQL", 
-      dialect: "postgresql", 
-      icon: <Database className="h-4 w-4" />
-    },
-    { 
-      id: "spark", 
-      name: "Spark SQL", 
-      dialect: "sparksql", 
-      icon: <Zap className="h-4 w-4" />
-    },
-  ])
-  
-  const [selectedEngine, setSelectedEngine] = useState("bigquery")
+  // Connection management
+  const { 
+    connections, 
+    activeConnection, 
+    setActiveConnection,
+    createConnection,
+    updateConnection,
+    deleteConnection,
+    loading: connectionLoading,
+    error: connectionError
+  } = useConnections()
+
+  // Connection management UI state
+  const [showConnectionForm, setShowConnectionForm] = useState(false)
+  const [showConnectionList, setShowConnectionList] = useState(false)
+  const [editingConnection, setEditingConnection] = useState<DatabaseConnection | null>(null)
   
   // Query tabs state
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
@@ -140,6 +132,8 @@ export default function SqlEditorApp() {
   
   // Legacy state (for backward compatibility)
   const [sqlQuery, setSqlQuery] = useState(`SELECT 1+1`)
+  const [selectedEngine, setSelectedEngine] = useState(DatabaseEngine.BIGQUERY)
+  const [selectedProject, setSelectedProject] = useState("default-project")
 
   const [queryResults, setQueryResults] = useState<any[]>([])
   const [isRunning, setIsRunning] = useState(false)
@@ -227,17 +221,73 @@ export default function SqlEditorApp() {
     })
   }
 
-  // Get default query based on selected engine
+  // Connection management functions
+  const handleCreateConnection = async (data: ConnectionFormData) => {
+    try {
+      const newConnection = await createConnection(data)
+      setActiveConnection(newConnection)
+      setShowConnectionForm(false)
+      setEditingConnection(null)
+    } catch (error) {
+      console.error('Failed to create connection:', error)
+      // Error handling is managed by the useConnections hook
+    }
+  }
+
+  const handleUpdateConnection = async (data: ConnectionFormData) => {
+    if (!editingConnection) return
+    
+    try {
+      const updatedConnection = await updateConnection(editingConnection.id, data)
+      setActiveConnection(updatedConnection)
+      setShowConnectionForm(false)
+      setEditingConnection(null)
+    } catch (error) {
+      console.error('Failed to update connection:', error)
+    }
+  }
+
+  const handleDeleteConnection = async (connection: DatabaseConnection) => {
+    try {
+      await deleteConnection(connection.id)
+      if (activeConnection?.id === connection.id) {
+        setActiveConnection(null)
+      }
+    } catch (error) {
+      console.error('Failed to delete connection:', error)
+    }
+  }
+
+  const handleEditConnection = (connection: DatabaseConnection) => {
+    setEditingConnection(connection)
+    setShowConnectionForm(true)
+    setShowConnectionList(false)
+  }
+
+  const handleCancelConnectionForm = () => {
+    setShowConnectionForm(false)
+    setEditingConnection(null)
+  }
+
+  const handleConnectionSelect = (connection: DatabaseConnection) => {
+    setActiveConnection(connection)
+    setShowConnectionList(false)
+  }
+
+  // Get default query based on active connection engine
   const getDefaultQuery = () => {
-    const engine = availableEngines.find(e => e.id === selectedEngine)
-    switch (engine?.id) {
-      case "mysql":
+    if (!activeConnection) {
+      return "SELECT 1+1"
+    }
+    
+    switch (activeConnection.engine) {
+      case DatabaseEngine.MYSQL:
         return "SELECT 1+1 as result;"
-      case "postgresql":
+      case DatabaseEngine.POSTGRESQL:
         return "SELECT 1+1 as result;"
-      case "spark":
+      case DatabaseEngine.SPARK_SQL:
         return "SELECT 1+1 as result"
-      case "bigquery":
+      case DatabaseEngine.BIGQUERY:
       default:
         return "SELECT 1+1"
     }
@@ -412,7 +462,19 @@ export default function SqlEditorApp() {
   }
 
   const getCurrentEngine = () => {
-    return availableEngines.find(e => e.id === selectedEngine) || availableEngines[0]
+    if (!activeConnection) {
+      return {
+        name: 'No Connection',
+        engine: DatabaseEngine.BIGQUERY, // Default engine for compatibility
+        icon: <Database className="h-4 w-4" />
+      }
+    }
+    return {
+      name: activeConnection.name,
+      engine: activeConnection.engine,
+      engineName: ENGINE_DISPLAY_NAMES[activeConnection.engine],
+      icon: <Database className="h-4 w-4" />
+    }
   }
 
   // Enhanced editor handlers
@@ -453,35 +515,68 @@ export default function SqlEditorApp() {
           </div>
         </div>
 
-        {/* Engine Selector */}
+        {/* Connection Selector */}
         {!isAppSidebarCollapsed && (
           <div className="px-4 mb-4 w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
-                  <div className="flex items-center">
+                  <div className="flex items-center min-w-0">
                     {getCurrentEngine().icon}
-                    <span className="ml-2">{getCurrentEngine().name}</span>
+                    <span className="ml-2 truncate">{getCurrentEngine().name}</span>
+                    {activeConnection && (
+                      <span className="ml-1 text-xs text-muted-foreground truncate">
+                        ({getCurrentEngine().engineName})
+                      </span>
+                    )}
                   </div>
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Select Database Engine</DropdownMenuLabel>
+              <DropdownMenuContent className="w-64">
+                <DropdownMenuLabel>Database Connections</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {availableEngines.map((engine) => (
-                  <DropdownMenuItem
-                    key={engine.id}
-                    onClick={() => setSelectedEngine(engine.id)}
-                    className="flex items-center"
-                  >
-                    {engine.icon}
-                    <span className="ml-2">{engine.name}</span>
-                    {selectedEngine === engine.id && (
-                      <Check className="h-4 w-4 ml-auto" />
-                    )}
+                
+                {connections.length > 0 ? (
+                  connections.map((connection) => (
+                    <DropdownMenuItem
+                      key={connection.id}
+                      onClick={() => setActiveConnection(connection)}
+                      className="flex items-center"
+                    >
+                      <Database className="h-4 w-4 mr-2" />
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate">{connection.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {ENGINE_DISPLAY_NAMES[connection.engine]}
+                        </span>
+                      </div>
+                      {activeConnection?.id === connection.id && (
+                        <Check className="h-4 w-4 ml-auto flex-shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>
+                    <span className="text-muted-foreground">No connections available</span>
                   </DropdownMenuItem>
-                ))}
+                )}
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowConnectionForm(true)}
+                  className="flex items-center"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Connection
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowConnectionList(true)}
+                  className="flex items-center"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Connections
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -1098,8 +1193,8 @@ export default function SqlEditorApp() {
                       setSqlQuery(value || "")
                     }
                   }}
-                  engine={getCurrentEngine()}
-                  connectionId={`${selectedEngine}-${selectedProject}`}
+                  engine={getCurrentEngine().engine}
+                  connectionId={`${getCurrentEngine().engine}-${selectedProject}`}
                   height="100%"
                   settings={editorSettings}
                   onValidationChange={handleValidationChange}
@@ -1112,7 +1207,7 @@ export default function SqlEditorApp() {
                 errors={validationErrors}
                 lineCount={(getCurrentQueryTab()?.query || "").split('\n').length}
                 characterCount={(getCurrentQueryTab()?.query || "").length}
-                engine={getCurrentEngine().name}
+                engine={getCurrentEngine().engineName || getCurrentEngine().name}
                 connectionStatus={currentSchema ? 'connected' : 'disconnected'}
                 schemaLastUpdated={currentSchema?.lastUpdated}
               />
@@ -1315,8 +1410,15 @@ export default function SqlEditorApp() {
                 <div>
                   <h4 className="text-sm font-medium mb-2">Query information</h4>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <div>Status: Ready to run</div>
-                    <div>Engine: {getCurrentEngine().name}</div>
+                    <div>Status: {activeConnection ? 'Ready to run' : 'No connection'}</div>
+                    <div>Connection: {activeConnection ? activeConnection.name : 'None selected'}</div>
+                    {activeConnection && (
+                      <>
+                        <div>Engine: {ENGINE_DISPLAY_NAMES[activeConnection.engine]}</div>
+                        <div>Host: {activeConnection.host}:{activeConnection.port}</div>
+                        <div>Database: {activeConnection.database}</div>
+                      </>
+                    )}
                     <div>Processing location: {processingLocation}</div>
                     <div>Estimated cost: -</div>
                   </div>
@@ -1332,6 +1434,57 @@ export default function SqlEditorApp() {
           </>
         )}
       </div>
+
+      {/* Connection Management Modals */}
+      {showConnectionForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <ConnectionForm
+              connection={editingConnection || undefined}
+              onSubmit={editingConnection ? handleUpdateConnection : handleCreateConnection}
+              onCancel={handleCancelConnectionForm}
+              loading={connectionLoading}
+            />
+          </div>
+        </div>
+      )}
+
+      {showConnectionList && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Manage Database Connections</h2>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowConnectionList(false)
+                      setShowConnectionForm(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Connection
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowConnectionList(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+              
+              <ConnectionList
+                onConnectionSelect={handleConnectionSelect}
+                onEdit={handleEditConnection}
+                onDelete={handleDeleteConnection}
+                selectedConnectionId={activeConnection?.id}
+                maxHeight="60vh"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,13 +3,7 @@
  */
 
 import * as monaco from 'monaco-editor';
-
-export interface DatabaseEngine {
-  id: string;
-  name: string;
-  dialect: string;
-  icon?: React.ReactNode;
-}
+import { DatabaseEngine } from './connections';
 
 export interface EditorSettings {
   fontSize: number;

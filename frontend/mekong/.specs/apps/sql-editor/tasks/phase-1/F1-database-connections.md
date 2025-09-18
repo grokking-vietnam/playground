@@ -7,6 +7,8 @@
 - **Effort**: Medium (3-5 days)
 - **AI Complexity**: Low
 - **Phase**: 1
+- **Assignee**: v2kk
+- **Status**: WIP (Work in Progress)
 
 ## Dependencies
 - [ ] Project structure setup completed
