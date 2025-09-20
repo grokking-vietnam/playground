@@ -22,6 +22,15 @@ import { EditorSettingsDropdown } from "./components/editor/EditorSettings"
 import type { EditorSettings, DatabaseSchema } from "./types"
 import * as monaco from 'monaco-editor'
 
+// Import authentication components and providers
+import { AuthProvider } from "./contexts/AuthContext"
+import { useAuth } from "./hooks/useAuth"
+import { usePermissions } from "./hooks/usePermissions"
+import { ProtectedRoute } from "./components/auth/ProtectedRoute"
+import { AuthStatus } from "./components/auth/AuthStatus"
+import { LoginForm } from "./components/auth/LoginForm"
+import { UserProfile } from "./components/auth/UserProfile"
+
 // Import connection management components and hooks
 import { useConnections } from "./hooks/useConnections"
 import { ConnectionForm } from "./components/connections/ConnectionForm"
@@ -31,7 +40,8 @@ import {
   DatabaseConnection, 
   ConnectionFormData, 
   ENGINE_DISPLAY_NAMES,
-  DatabaseEngine 
+  DatabaseEngine,
+  Permission
 } from "./types"
 import {
   Search,
@@ -107,6 +117,22 @@ interface QueryTab {
 }
 
 export default function SqlEditorApp() {
+  return (
+    <AuthProvider>
+      <SqlEditorPage />
+    </AuthProvider>
+  )
+}
+
+function SqlEditorPage() {
+  // Authentication state
+  const { isAuthenticated, user, logout } = useAuth()
+  const { can } = usePermissions()
+  
+  // User profile management
+  const [showUserProfile, setShowUserProfile] = useState(false)
+  const [isLoginMode, setIsLoginMode] = useState(false)
+
   // Connection management
   const { 
     connections, 
@@ -490,19 +516,41 @@ export default function SqlEditorApp() {
   }
 
   return (
-    <div className="flex h-full bg-white">
-      {/* 1. SQL Editor App Sidebar */}
-      <div 
-        id="sql-editor-app-sidebar" 
-        className={cn(
-          "relative bg-card border-r flex flex-col py-4 transition-all duration-300 ease-in-out",
-          isAppSidebarCollapsed ? "w-16 items-center" : "w-64 items-start"
-        )}
+    <>
+      <ProtectedRoute 
+        requiredPermissions={[Permission.QUERY_READ]}
+        fallbackComponent={
+          <div className="flex items-center justify-center min-h-screen p-4">
+            <LoginForm 
+              title="SQL Editor Access"
+              description="Please sign in to access the SQL Editor"
+              onSuccess={() => setIsLoginMode(false)}
+            />
+          </div>
+        }
+      >
+        <div className="flex h-full bg-white">
+          {/* User Profile Modal */}
+          {showUserProfile && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+                <UserProfile onClose={() => setShowUserProfile(false)} />
+              </div>
+            </div>
+          )}
+
+          {/* 1. SQL Editor App Sidebar */}
+          <div 
+            id="sql-editor-app-sidebar" 
+            className={cn(
+              "relative bg-card border-r flex flex-col py-4 transition-all duration-300 ease-in-out",
+              isAppSidebarCollapsed ? "w-16 items-center" : "w-64 items-start"
+            )}
       >
         {/* Header */}
         <div className={cn(
           "flex items-center mb-6",
-          isAppSidebarCollapsed ? "justify-center" : "w-full px-4"
+          isAppSidebarCollapsed ? "justify-center" : "w-full px-4 justify-between"
         )}>
           <div className="flex items-center">
             <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
@@ -512,6 +560,13 @@ export default function SqlEditorApp() {
               <span className="ml-3 text-lg font-semibold">SQL Editor</span>
             )}
           </div>
+          {!isAppSidebarCollapsed && (
+            <AuthStatus 
+              variant="compact"
+              showRoleBadge={true}
+              onProfileClick={() => setShowUserProfile(true)}
+            />
+          )}
         </div>
 
         {/* Connection Selector */}
@@ -562,13 +617,15 @@ export default function SqlEditorApp() {
                 )}
                 
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowConnectionForm(true)}
-                  className="flex items-center"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Connection
-                </DropdownMenuItem>
+                {can.createConnections && (
+                  <DropdownMenuItem
+                    onClick={() => setShowConnectionForm(true)}
+                    className="flex items-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Connection
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => setShowConnectionList(true)}
                   className="flex items-center"
@@ -1042,10 +1099,11 @@ export default function SqlEditorApp() {
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={runQuery}
-                  disabled={isRunning}
+                  disabled={isRunning || !can.executeQueries}
                   variant="default"
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700 text-white"
+                  title={!can.executeQueries ? "You don't have permission to execute queries" : ""}
                 >
                   {isRunning ? (
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -1055,20 +1113,26 @@ export default function SqlEditorApp() {
                   Run
                 </Button>
                 
-                <Button variant="outline" size="sm">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </Button>
+                {can.createQueries && (
+                  <Button variant="outline" size="sm">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                )}
                 
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
+                {can.exportData && (
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                )}
                 
-                <Button variant="outline" size="sm">
-                  <Share className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
+                {can.shareData && (
+                  <Button variant="outline" size="sm">
+                    <Share className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                )}
                 
                 <Button variant="outline" size="sm">
                   <Calendar className="h-4 w-4 mr-2" />
@@ -1484,6 +1548,8 @@ export default function SqlEditorApp() {
           </div>
         </div>
       )}
-    </div>
+        </div>
+      </ProtectedRoute>
+    </>
   )
 }
