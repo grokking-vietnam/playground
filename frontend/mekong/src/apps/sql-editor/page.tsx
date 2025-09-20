@@ -36,6 +36,11 @@ import { useConnections } from "./hooks/useConnections"
 import { ConnectionForm } from "./components/connections/ConnectionForm"
 import { ConnectionList } from "./components/connections/ConnectionList"
 import { ConnectionStatus } from "./components/connections/ConnectionStatus"
+
+// Import real schema browser components
+import { SchemaTree } from "./components/browser/SchemaTree"
+import { useSchemaTree } from "./hooks/useSchemaTree"
+
 import { 
   DatabaseConnection, 
   ConnectionFormData, 
@@ -150,6 +155,13 @@ function SqlEditorPage() {
   const [showConnectionList, setShowConnectionList] = useState(false)
   const [editingConnection, setEditingConnection] = useState<DatabaseConnection | null>(null)
   
+  // Real schema tree state (for demo)
+  const schemaTree = useSchemaTree({
+    connectionId: activeConnection?.id || 'demo-connection',
+    autoLoad: false, // Don't auto-load until demo is enabled
+    enableSearch: true
+  })
+  
   // Query tabs state
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
     { id: "tab-1", name: "Untitled query", query: "SELECT 1+1", isUnsaved: false }
@@ -194,6 +206,9 @@ function SqlEditorPage() {
   const [sqlAutocomplete, setSqlAutocomplete] = useState(true)
   const [queryMode, setQueryMode] = useState("standard") // "standard", "batch", "streaming"
   const [enableSqlTranslation, setEnableSqlTranslation] = useState(false)
+
+  // Demo state for real schema browser
+  const [showRealSchemaDemo, setShowRealSchemaDemo] = useState(false)
 
   // Enhanced editor state
   const [editorSettings, setEditorSettings] = useState<EditorSettings>({
@@ -477,6 +492,13 @@ function SqlEditorPage() {
     window.addEventListener('resize', handleWindowResize)
     return () => window.removeEventListener('resize', handleWindowResize)
   }, [isDataCatalogCollapsed, dataCatalogWidth])
+
+  // Load schema when real schema demo is enabled
+  useEffect(() => {
+    if (showRealSchemaDemo) {
+      schemaTree.loadSchema()
+    }
+  }, [showRealSchemaDemo])
 
   const getTableIcon = (type: string) => {
     switch (type) {
@@ -929,11 +951,48 @@ function SqlEditorPage() {
             />
             <span className="text-sm text-muted-foreground">Show starred only</span>
           </div>
+
+          {/* Demo toggle for real schema browser */}
+          <div className="flex items-center justify-between mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+            <div className="flex items-center">
+              <span className="text-sm font-medium text-blue-700">Real Schema Demo</span>
+            </div>
+            <Button 
+              variant={showRealSchemaDemo ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowRealSchemaDemo(!showRealSchemaDemo)}
+              className="text-xs h-6"
+            >
+              {showRealSchemaDemo ? 'ON' : 'OFF'}
+            </Button>
+          </div>
         </div>
 
-              {/* Project Tree */}
+              {/* Schema Browser */}
               <div className="flex-1 overflow-auto p-2">
-                {projects.map((project) => (
+                {showRealSchemaDemo ? (
+                  /* Real Schema Tree */
+                  <div>
+                    <SchemaTree
+                      connectionId={activeConnection?.id || 'demo-connection'}
+                      nodes={schemaTree.nodes}
+                      loading={schemaTree.loading}
+                      onNodeExpand={schemaTree.expandNode}
+                      onNodeSelect={schemaTree.selectNode}
+                      selectedNodeId={schemaTree.selectedNode?.id}
+                      expandedNodeIds={schemaTree.expandedNodeIds}
+                      searchQuery={schemaTree.searchQuery}
+                    />
+                    
+                    {schemaTree.error && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        Error: {schemaTree.error}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Mock Project Tree */
+                  projects.map((project) => (
                   <div key={project.id} className="mb-2">
                     {/* Project Node */}
                     <div 
@@ -999,7 +1058,8 @@ function SqlEditorPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                ))
+                )}
               </div>
 
             {/* Resize Handle */}
