@@ -98,3 +98,37 @@ export {
   Permission,
   ROLE_PERMISSIONS
 } from './auth'
+
+// Query execution types
+export type {
+  QueryExecution,
+  ExecutionMetadata,
+  ExecutionOptions,
+  QueryError
+} from './execution'
+
+export {
+  ExecutionStatus,
+  ExecutionPriority,
+  ExecutionMode,
+  DEFAULT_EXECUTION_OPTIONS
+} from './execution'
+
+// Query results types
+export type {
+  QueryResult,
+  QueryRow,
+  ColumnDefinition,
+  ResultMetadata,
+  ExecutionPlan,
+  PlanNode,
+  PlanAnalysis,
+  ResultFormattingOptions,
+  ResultExportOptions
+} from './results'
+
+export {
+  DEFAULT_FORMATTING_OPTIONS,
+  DATA_TYPE_GROUPS,
+  getDataTypeGroup
+} from './results'

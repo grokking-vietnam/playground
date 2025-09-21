@@ -46,8 +46,19 @@ import {
   ConnectionFormData, 
   ENGINE_DISPLAY_NAMES,
   DatabaseEngine,
-  Permission
+  Permission,
+  ExecutionStatus
 } from "./types"
+import type {
+  QueryExecution,
+  QueryResult,
+  QueryError
+} from "./types"
+
+// Import query execution services
+import { queryExecutor } from "./services/QueryExecutor"
+import { resultProcessor } from "./services/ResultProcessor"
+import { errorHandler } from "./services/ErrorHandler"
 import {
   Search,
   Plus,
@@ -174,6 +185,11 @@ function SqlEditorPage() {
 
   const [queryResults, setQueryResults] = useState<any[]>([])
   const [isRunning, setIsRunning] = useState(false)
+  
+  // Query execution state
+  const [currentExecution, setCurrentExecution] = useState<QueryExecution | null>(null)
+  const [executionError, setExecutionError] = useState<string | null>(null)
+  
   const [selectedProject, setSelectedProject] = useState("default-project")
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("results")
@@ -377,22 +393,103 @@ function SqlEditorPage() {
   }
 
   const runQuery = async () => {
-    setIsRunning(true)
     const currentTab = getCurrentQueryTab()
     
-    // Simulate query execution
-    setTimeout(() => {
-      setQueryResults([
-        { "result": 2 }
-      ])
-      setIsRunning(false)
-      setActiveTab("results")
+    // Validate prerequisites
+    if (!currentTab || !currentTab.query.trim()) {
+      setExecutionError("Please enter a SQL query to execute")
+      return
+    }
+    
+    if (!activeConnection) {
+      setExecutionError("Please select a database connection before running queries")
+      return
+    }
+    
+    if (activeConnection.status !== 'connected') {
+      setExecutionError(`Cannot execute query: connection status is '${activeConnection.status}'`)
+      return
+    }
+
+    // Clear previous error and results
+    setExecutionError(null)
+    setQueryResults([])
+    setIsRunning(true)
+    setCurrentExecution(null)
+    
+    try {
+      // Start query execution
+      const executionId = await queryExecutor.executeQuery(
+        currentTab.query,
+        activeConnection.id,
+        activeConnection,
+        {
+          timeout: 30000, // 30 seconds
+          maxRows: 10000,
+          cancellable: true
+        }
+      )
       
-      // Mark tab as saved after successful run
-      if (currentTab) {
-        updateQueryTab(currentTab.id, { isUnsaved: false })
+      // Subscribe to execution updates
+      const unsubscribe = queryExecutor.onExecutionUpdate((execution) => {
+        if (execution.id === executionId) {
+          setCurrentExecution(execution)
+          
+          switch (execution.status) {
+            case ExecutionStatus.COMPLETED:
+              if (execution.results) {
+                // Process and format results for display
+                const formattedResults = resultProcessor.formatForDisplay(execution.results)
+                setQueryResults(formattedResults.rows)
+                setActiveTab("results")
+                
+                // Mark tab as saved after successful run
+                updateQueryTab(currentTab.id, { isUnsaved: false })
+              }
+              setIsRunning(false)
+              unsubscribe()
+              break
+              
+            case ExecutionStatus.FAILED:
+            case ExecutionStatus.TIMEOUT:
+            case ExecutionStatus.CANCELLED:
+              if (execution.error) {
+                const errorInfo = errorHandler.processQueryError(execution.error)
+                setExecutionError(`${errorInfo.title}: ${errorInfo.message}`)
+              } else {
+                const errorInfo = errorHandler.processExecutionError(execution.status)
+                setExecutionError(`${errorInfo.title}: ${errorInfo.message}`)
+              }
+              setIsRunning(false)
+              unsubscribe()
+              break
+              
+            case ExecutionStatus.RUNNING:
+              // Query is running, keep UI in running state
+              break
+          }
+        }
+      })
+      
+    } catch (error) {
+      console.error('Failed to start query execution:', error)
+      setExecutionError(error instanceof Error ? error.message : 'Failed to execute query')
+      setIsRunning(false)
+    }
+  }
+
+  const cancelQuery = async () => {
+    if (currentExecution && isRunning) {
+      try {
+        const cancelled = await queryExecutor.cancelExecution(currentExecution.id)
+        if (cancelled) {
+          setIsRunning(false)
+          setExecutionError("Query was cancelled by user")
+        }
+      } catch (error) {
+        console.error('Failed to cancel query:', error)
       }
-    }, 1000)
+    }
   }
 
   const toggleSection = (section: keyof typeof collapsedSections) => {
@@ -1202,19 +1299,24 @@ function SqlEditorPage() {
               
               <div className="flex items-center space-x-2">
                 <Button
-                  onClick={runQuery}
-                  disabled={isRunning || !can.executeQueries}
+                  onClick={isRunning ? cancelQuery : runQuery}
+                  disabled={!can.executeQueries}
                   variant="default"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className={isRunning ? "bg-red-600 hover:bg-red-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"}
                   title={!can.executeQueries ? "You don't have permission to execute queries" : ""}
                 >
                   {isRunning ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Cancel
+                    </>
                   ) : (
-                    <Play className="h-4 w-4 mr-2" />
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Run
+                    </>
                   )}
-                  Run
                 </Button>
                 
                 {can.createQueries && (
@@ -1415,14 +1517,36 @@ function SqlEditorPage() {
 
               <TabsContent value="results" className="flex-1 m-0 p-0">
                 <div className="h-full flex flex-col">
-                  {queryResults.length > 0 ? (
+                  {executionError ? (
+                    /* Error Display */
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center max-w-md">
+                        <div className="h-12 w-12 text-red-400 mx-auto mb-4">❌</div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Query Error</h3>
+                        <p className="text-red-600 mb-4 whitespace-pre-wrap">{executionError}</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setExecutionError(null)}
+                        >
+                          Clear Error
+                        </Button>
+                      </div>
+                    </div>
+                  ) : queryResults.length > 0 ? (
                     <>
                       {/* Results Header */}
                       <div className="p-4 border-b border-gray-200">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-600">Row</span>
-                            <span className="text-sm text-gray-600">result</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              Results ({queryResults.length} row{queryResults.length !== 1 ? 's' : ''})
+                            </span>
+                            {currentExecution?.duration && (
+                              <span className="text-sm text-gray-600">
+                                Execution time: {currentExecution.duration}ms
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="sm">
@@ -1443,9 +1567,12 @@ function SqlEditorPage() {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                 Row
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                result
-                              </th>
+                              {/* Dynamic columns based on actual results */}
+                              {queryResults.length > 0 && Object.keys(queryResults[0]).map((column) => (
+                                <th key={column} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                  {column}
+                                </th>
+                              ))}
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
@@ -1454,9 +1581,15 @@ function SqlEditorPage() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                   {index + 1}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {row.result}
-                                </td>
+                                {Object.values(row).map((value, colIndex) => (
+                                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {value === null || value === undefined ? (
+                                      <span className="text-gray-400 italic">(null)</span>
+                                    ) : (
+                                      String(value)
+                                    )}
+                                  </td>
+                                ))}
                               </tr>
                             ))}
                           </tbody>
@@ -1464,7 +1597,8 @@ function SqlEditorPage() {
                       </div>
                       
                       <div className="p-4 border-t border-gray-200 text-center text-sm text-gray-500">
-                        1 - 1 of 1
+                        {queryResults.length} row{queryResults.length !== 1 ? 's' : ''}
+                        {currentExecution?.results?.hasMore && ' (showing first page)'}
                       </div>
                     </>
                   ) : (
