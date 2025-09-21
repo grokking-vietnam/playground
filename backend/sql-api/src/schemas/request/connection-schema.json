@@ -1,0 +1,20 @@
+{
+  "$id": "https://api.example.com/schemas/connection-schema-request.json",
+  "title": "Connection Schema Request",
+  "description": "Request payload for retrieving database schema information",
+  "type": "object",
+  "properties": {
+    "connectionId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Unique connection identifier"
+    },
+    "connection": {
+      "$ref": "https://api.example.com/schemas/connection-config.json"
+    }
+  },
+  "required": ["connectionId", "connection"],
+  "additionalProperties": false
+}

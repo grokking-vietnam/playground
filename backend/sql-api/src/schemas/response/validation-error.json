@@ -1,0 +1,51 @@
+{
+  "$id": "https://api.example.com/schemas/validation-error-response.json",
+  "title": "Validation Error Response",
+  "description": "Response format for validation errors",
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string",
+      "const": "Validation Error"
+    },
+    "message": {
+      "type": "string",
+      "description": "Validation error message"
+    },
+    "details": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "instancePath": {
+            "type": "string",
+            "description": "Path to the invalid property"
+          },
+          "schemaPath": {
+            "type": "string",
+            "description": "Path in schema where validation failed"
+          },
+          "keyword": {
+            "type": "string",
+            "description": "Validation keyword that failed"
+          },
+          "params": {
+            "type": "object",
+            "description": "Validation parameters"
+          },
+          "message": {
+            "type": "string",
+            "description": "Validation error message"
+          }
+        },
+        "required": ["instancePath", "schemaPath", "keyword", "message"]
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["error", "message", "details", "timestamp"],
+  "additionalProperties": false
+}

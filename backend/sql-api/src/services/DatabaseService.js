@@ -293,8 +293,8 @@ class DatabaseService {
       /drop\s+database/i,
       /drop\s+schema/i,
       /truncate\s+table/i,
-      /delete\s+from.*where\s*$/i, // DELETE without WHERE
-      /update.*set.*where\s*$/i,   // UPDATE without WHERE
+      /delete\s+from\s+\w+(?:\s*;?\s*)?$/i, // DELETE without WHERE
+      /update\s+\w+\s+set\s+(?!.*where)[^;]*(?:\s*;?\s*)?$/i,   // UPDATE without WHERE (no WHERE clause found)
     ]
     
     for (const pattern of dangerousPatterns) {
@@ -324,16 +324,14 @@ class DatabaseService {
    * Create structured error for query failures
    */
   createQueryError(error, query) {
-    const queryError = {
-      message: error.message,
-      code: error.code,
-      severity: error.severity,
-      line: error.line,
-      column: error.column,
-      position: error.position,
-      hint: error.hint,
-      query: query.substring(0, 200) // First 200 chars for context
-    }
+    const queryError = new Error(error.message)
+    queryError.code = error.code
+    queryError.severity = error.severity
+    queryError.line = error.line
+    queryError.column = error.column
+    queryError.position = error.position
+    queryError.hint = error.hint
+    queryError.query = query.substring(0, 200) // First 200 chars for context
     
     return queryError
   }

@@ -1,0 +1,16 @@
+{
+  "$id": "https://api.example.com/schemas/query-validate-request.json",
+  "title": "Query Validation Request",
+  "description": "Request payload for validating SQL queries",
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100000,
+      "description": "SQL query to validate"
+    }
+  },
+  "required": ["query"],
+  "additionalProperties": false
+}

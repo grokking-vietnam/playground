@@ -36,9 +36,24 @@ const limiter = rateLimit({
 })
 app.use('/api/', limiter)
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }))
+// Body parsing middleware with error handling
+app.use(express.json({ 
+  limit: '10mb',
+  strict: true
+}))
 app.use(express.urlencoded({ extended: true }))
+
+// Handle JSON parsing errors
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({
+      error: 'Invalid JSON',
+      message: 'Request body contains invalid JSON',
+      timestamp: new Date().toISOString()
+    })
+  }
+  next(error)
+})
 
 // Request logging
 app.use(requestLogger)
@@ -85,3 +100,4 @@ process.on('SIGINT', () => {
   console.log('🛑 SIGINT received, shutting down gracefully')
   process.exit(0)
 })
+

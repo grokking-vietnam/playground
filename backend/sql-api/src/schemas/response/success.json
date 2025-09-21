@@ -1,0 +1,23 @@
+{
+  "$id": "https://api.example.com/schemas/success-response.json",
+  "title": "Success Response",
+  "description": "Standard success response format",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "description": "Response data payload"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Response timestamp in ISO format"
+    }
+  },
+  "required": ["success", "timestamp"],
+  "additionalProperties": false
+}
