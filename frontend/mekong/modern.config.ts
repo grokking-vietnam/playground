@@ -14,6 +14,24 @@ export default defineConfig({
         require('autoprefixer'),
       ]);
     },
+    rspack: (config) => {
+      // Suppress Monaco Editor dynamic require warnings
+      config.ignoreWarnings = config.ignoreWarnings || [];
+      config.ignoreWarnings.push(
+        // Ignore Monaco Editor dynamic require warnings
+        /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+        // Additional Monaco Editor warnings
+        /node_modules[\/\\]monaco-editor/
+      );
+
+      // Ensure Monaco Editor works correctly with Rspack
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = config.resolve.fallback || {};
+      config.resolve.fallback.path = false;
+      config.resolve.fallback.fs = false;
+
+      return config;
+    },
   },
   plugins: [
     appTools({
@@ -31,5 +49,8 @@ export default defineConfig({
     'process.env.PERMISSION_CONTROL_URL': JSON.stringify(process.env.PERMISSION_CONTROL_URL || 'http://localhost:3003'),
     'process.env.WORKFLOW_MANAGEMENT_URL': JSON.stringify(process.env.WORKFLOW_MANAGEMENT_URL || 'http://localhost:3004'),
     'process.env.SQL_EDITOR_URL': JSON.stringify(process.env.SQL_EDITOR_URL || 'http://localhost:3005'),
+    'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
+    // Also make it available on window object for runtime access
+    'window.NEXT_PUBLIC_API_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
   },
 });

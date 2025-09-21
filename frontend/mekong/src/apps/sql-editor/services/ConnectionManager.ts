@@ -15,6 +15,7 @@ import {
   DEFAULT_PORTS
 } from '../types/connections'
 import { encryptionService, EncryptedData } from './EncryptionService'
+import { RealPostgreSQLDriver } from './RealPostgreSQLDriver'
 
 /**
  * Storage key for connections in localStorage
@@ -221,8 +222,8 @@ export class ConnectionManager {
         }
       }
 
-      // Simulate connection test (in a real app, this would make actual network calls)
-      const result = await this.simulateConnectionTest(connection, password)
+      // Use real connection test for PostgreSQL connections
+      const result = await this.realConnectionTest(connection, password)
       
       // Update connection status
       connection.status = result.success ? ConnectionStatus.CONNECTED : ConnectionStatus.ERROR
@@ -377,7 +378,53 @@ export class ConnectionManager {
   }
 
   /**
-   * Simulate connection test (placeholder for actual database connection logic)
+   * Real connection test using actual database drivers
+   */
+  private async realConnectionTest(
+    connection: DatabaseConnection, 
+    password: string
+  ): Promise<ConnectionTestResult> {
+    try {
+      // Create connection object with decrypted password
+      const testConnection: DatabaseConnection = {
+        ...connection,
+        password: password
+      }
+
+      // Use appropriate driver based on engine
+      if (connection.engine === DatabaseEngine.POSTGRESQL) {
+        const driver = new RealPostgreSQLDriver()
+        const success = await driver.testConnection(testConnection)
+        
+        if (success) {
+          return {
+            success: true,
+            details: {
+              version: 'PostgreSQL (connected via API)',
+              responseTime: 100,
+              availableDatabases: [connection.database]
+            }
+          }
+        } else {
+          return {
+            success: false,
+            error: 'Failed to connect to PostgreSQL database'
+          }
+        }
+      }
+
+      // Fallback to simulated test for other engines
+      return await this.simulateConnectionTest(connection, password)
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Connection test failed'
+      }
+    }
+  }
+
+  /**
+   * Simulate connection test (fallback for non-PostgreSQL engines)
    */
   private async simulateConnectionTest(
     connection: DatabaseConnection, 

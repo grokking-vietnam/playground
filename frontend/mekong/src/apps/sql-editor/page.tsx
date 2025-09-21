@@ -422,6 +422,7 @@ function SqlEditorPage() {
       const executionId = await queryExecutor.executeQuery(
         currentTab.query,
         activeConnection.id,
+        activeConnection,
         {
           timeout: 30000, // 30 seconds
           maxRows: 10000,

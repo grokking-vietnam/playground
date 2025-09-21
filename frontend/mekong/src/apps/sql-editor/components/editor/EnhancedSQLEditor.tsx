@@ -9,6 +9,7 @@ import type { DatabaseEngine, EditorSettings, DatabaseSchema, SchemaUpdateEvent 
 import { SQLLanguageService } from '../../services/SQLLanguageService';
 import { SchemaProvider } from '../../services/SchemaProvider';
 import { createEditorOptions, createSQLTheme, DEFAULT_EDITOR_SETTINGS } from '../../utils/editorConfig';
+import { initializeMonacoEditor } from '../../utils/monacoConfig';
 
 export interface EnhancedSQLEditorProps {
   value: string;
@@ -54,6 +55,9 @@ export function EnhancedSQLEditor({
   const handleEditorDidMount = useCallback(
     (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof monaco) => {
       editorRef.current = editor;
+
+      // Initialize Monaco Editor with proper configuration
+      initializeMonacoEditor();
 
       // Register custom SQL theme
       monacoInstance.editor.defineTheme('sql-theme', createSQLTheme());

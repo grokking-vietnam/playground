@@ -20,7 +20,8 @@ import {
   DEFAULT_EXECUTION_OPTIONS
 } from '../types'
 
-import { PostgreSQLDriver } from './PostgreSQLDriver'
+import { RealPostgreSQLDriver } from './RealPostgreSQLDriver'
+import { encryptionService, EncryptedData } from './EncryptionService'
 
 /**
  * Generate unique execution ID
@@ -35,7 +36,7 @@ function generateExecutionId(): string {
 export class QueryExecutor {
   private static instance: QueryExecutor
   private executions = new Map<string, QueryExecution>()
-  private drivers = new Map<string, PostgreSQLDriver>()
+  private drivers = new Map<string, RealPostgreSQLDriver>()
   private executionListeners = new Set<(execution: QueryExecution) => void>()
 
   private constructor() {}
@@ -56,6 +57,7 @@ export class QueryExecutor {
   async executeQuery(
     query: string,
     connectionId: string,
+    connection: DatabaseConnection,
     options?: ExecutionOptions
   ): Promise<string> {
     const executionId = generateExecutionId()
@@ -80,7 +82,7 @@ export class QueryExecutor {
     this.notifyExecutionListeners(execution)
 
     // Start execution asynchronously
-    this.executeAsync(execution, mergedOptions).catch(error => {
+    this.executeAsync(execution, connection, mergedOptions).catch(error => {
       console.error('Async execution failed:', error)
     })
 
@@ -172,7 +174,7 @@ export class QueryExecutor {
   /**
    * Execute query asynchronously
    */
-  private async executeAsync(execution: QueryExecution, options: ExecutionOptions): Promise<void> {
+  private async executeAsync(execution: QueryExecution, connection: DatabaseConnection, options: ExecutionOptions): Promise<void> {
     try {
       // Update to running status
       this.updateExecution(execution.id, {
@@ -180,7 +182,7 @@ export class QueryExecutor {
       })
 
       // Get or create driver for connection
-      const driver = await this.getDriver(execution.connectionId)
+      const driver = await this.getDriver(execution.connectionId, connection)
       if (!driver) {
         throw new Error(`No driver available for connection ${execution.connectionId}`)
       }
@@ -245,7 +247,7 @@ export class QueryExecutor {
   /**
    * Get or create database driver
    */
-  private async getDriver(connectionId: string): Promise<PostgreSQLDriver | null> {
+  private async getDriver(connectionId: string, connection: DatabaseConnection): Promise<RealPostgreSQLDriver | null> {
     // Check if driver already exists
     let driver = this.drivers.get(connectionId)
     if (driver && driver.isConnectionActive()) {
@@ -254,13 +256,20 @@ export class QueryExecutor {
 
     // Create new driver and connect
     try {
-      const connection = await this.getConnectionById(connectionId)
-      if (!connection) {
-        throw new Error(`Connection ${connectionId} not found`)
+      // Decrypt password if needed
+      let decryptedConnection = { ...connection }
+      if (encryptionService.isInitialized()) {
+        try {
+          const encryptedData: EncryptedData = JSON.parse(connection.password)
+          decryptedConnection.password = await encryptionService.decrypt(encryptedData)
+        } catch (e) {
+          // Password might not be encrypted (backward compatibility)
+          decryptedConnection.password = connection.password
+        }
       }
 
-      driver = new PostgreSQLDriver()
-      await driver.connect(connection)
+      driver = new RealPostgreSQLDriver()
+      await driver.connect(decryptedConnection)
       
       this.drivers.set(connectionId, driver)
       return driver
@@ -270,14 +279,6 @@ export class QueryExecutor {
     }
   }
 
-  /**
-   * Get connection by ID (integrates with ConnectionManager)
-   */
-  private async getConnectionById(connectionId: string): Promise<DatabaseConnection | null> {
-    // Import ConnectionManager dynamically to avoid circular dependencies
-    const { connectionManager } = await import('./ConnectionManager')
-    return connectionManager.getConnection(connectionId)
-  }
 
   /**
    * Update execution record
