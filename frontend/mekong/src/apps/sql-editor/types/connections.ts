@@ -11,6 +11,7 @@
 export enum DatabaseEngine {
   POSTGRESQL = 'postgresql',
   MYSQL = 'mysql',
+  SQLITE = 'sqlite',
   BIGQUERY = 'bigquery',
   SNOWFLAKE = 'snowflake',
   SPARK_SQL = 'sparksql'
@@ -121,6 +122,7 @@ export interface ConnectionManagerOptions {
 export const DEFAULT_PORTS: Record<DatabaseEngine, number> = {
   [DatabaseEngine.POSTGRESQL]: 5432,
   [DatabaseEngine.MYSQL]: 3306,
+  [DatabaseEngine.SQLITE]: 0, // File-based, no port needed
   [DatabaseEngine.BIGQUERY]: 443,
   [DatabaseEngine.SNOWFLAKE]: 443,
   [DatabaseEngine.SPARK_SQL]: 10000
@@ -132,6 +134,7 @@ export const DEFAULT_PORTS: Record<DatabaseEngine, number> = {
 export const ENGINE_DISPLAY_NAMES: Record<DatabaseEngine, string> = {
   [DatabaseEngine.POSTGRESQL]: 'PostgreSQL',
   [DatabaseEngine.MYSQL]: 'MySQL',
+  [DatabaseEngine.SQLITE]: 'SQLite',
   [DatabaseEngine.BIGQUERY]: 'BigQuery',
   [DatabaseEngine.SNOWFLAKE]: 'Snowflake',
   [DatabaseEngine.SPARK_SQL]: 'Spark SQL'
@@ -143,6 +146,7 @@ export const ENGINE_DISPLAY_NAMES: Record<DatabaseEngine, string> = {
 export const CONNECTION_STRING_TEMPLATES: Record<DatabaseEngine, string> = {
   [DatabaseEngine.POSTGRESQL]: 'postgresql://username:password@host:port/database',
   [DatabaseEngine.MYSQL]: 'mysql://username:password@host:port/database',
+  [DatabaseEngine.SQLITE]: 'sqlite:///path/to/database.db',
   [DatabaseEngine.BIGQUERY]: 'bigquery://project-id/dataset',
   [DatabaseEngine.SNOWFLAKE]: 'snowflake://account.region.snowflakecomputing.com/database',
   [DatabaseEngine.SPARK_SQL]: 'spark://host:port/database'
