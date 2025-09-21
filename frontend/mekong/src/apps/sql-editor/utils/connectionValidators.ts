@@ -161,6 +161,24 @@ const ENGINE_SPECIFIC_RULES: Record<DatabaseEngine, Partial<Record<keyof Connect
       maxLength: 64
     }
   },
+  [DatabaseEngine.SQLITE]: {
+    host: {
+      required: false // SQLite uses file paths
+    },
+    port: {
+      required: false // SQLite doesn't use ports
+    },
+    database: {
+      pattern: /^[a-zA-Z0-9_\-\.\/\\:]+$/,
+      custom: (value) => {
+        // SQLite database can be file path
+        if (!value.endsWith('.db') && !value.endsWith('.sqlite') && !value.endsWith('.sqlite3') && value !== ':memory:') {
+          return 'SQLite database should be a file path ending in .db, .sqlite, .sqlite3, or ":memory:" for in-memory database'
+        }
+        return null
+      }
+    }
+  },
   [DatabaseEngine.SPARK_SQL]: {
     database: {
       pattern: /^[a-zA-Z0-9_]+$/
@@ -266,7 +284,7 @@ function validateCrossFields(data: ConnectionFormData): Record<string, string> {
     }
   } else {
     // Ensure required fields are present when not using connection string
-    if (!data.host && data.engine !== DatabaseEngine.BIGQUERY) {
+    if (!data.host && data.engine !== DatabaseEngine.BIGQUERY && data.engine !== DatabaseEngine.SQLITE) {
       errors.host = 'Host is required when not using connection string'
     }
     if (!data.database) {
@@ -300,7 +318,7 @@ function generateWarnings(data: ConnectionFormData): Record<string, string> {
   }
 
   // Warn about SSL
-  if (!data.ssl && data.engine !== DatabaseEngine.BIGQUERY) {
+  if (!data.ssl && data.engine !== DatabaseEngine.BIGQUERY && data.engine !== DatabaseEngine.SQLITE) {
     warnings.ssl = 'Consider enabling SSL for secure connections'
   }
 
@@ -328,6 +346,7 @@ function validateConnectionString(connectionString: string, engine: DatabaseEngi
     const expectedProtocols = {
       [DatabaseEngine.POSTGRESQL]: ['postgresql', 'postgres'],
       [DatabaseEngine.MYSQL]: ['mysql'],
+      [DatabaseEngine.SQLITE]: ['sqlite'],
       [DatabaseEngine.BIGQUERY]: ['bigquery'],
       [DatabaseEngine.SNOWFLAKE]: ['snowflake'],
       [DatabaseEngine.SPARK_SQL]: ['spark']
@@ -411,6 +430,11 @@ export function getDefaultConnectionValues(engine?: DatabaseEngine): Partial<Con
     defaults.host = 'account.region.snowflakecomputing.com'
     defaults.port = DEFAULT_PORTS[DatabaseEngine.SNOWFLAKE]
     defaults.ssl = true
+  } else if (engine === DatabaseEngine.SQLITE) {
+    defaults.host = ''
+    defaults.port = DEFAULT_PORTS[DatabaseEngine.SQLITE]
+    defaults.ssl = false
+    defaults.database = 'database.db'
   }
 
   return defaults

@@ -466,6 +466,7 @@ export class ConnectionManager {
     const versions = {
       [DatabaseEngine.POSTGRESQL]: 'PostgreSQL 15.2',
       [DatabaseEngine.MYSQL]: 'MySQL 8.0.33',
+      [DatabaseEngine.SQLITE]: 'SQLite 3.44.0',
       [DatabaseEngine.BIGQUERY]: 'BigQuery 2024.01',
       [DatabaseEngine.SNOWFLAKE]: 'Snowflake 7.34.2',
       [DatabaseEngine.SPARK_SQL]: 'Spark 3.5.0'
