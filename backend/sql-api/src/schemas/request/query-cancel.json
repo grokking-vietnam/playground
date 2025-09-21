@@ -1,0 +1,15 @@
+{
+  "$id": "https://api.example.com/schemas/query-cancel-request.json",
+  "title": "Query Cancellation Request",
+  "description": "Request payload for canceling running queries",
+  "type": "object",
+  "properties": {
+    "queryId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID of the query to cancel"
+    }
+  },
+  "required": ["queryId"],
+  "additionalProperties": false
+}

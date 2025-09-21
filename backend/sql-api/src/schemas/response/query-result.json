@@ -1,0 +1,82 @@
+{
+  "$id": "https://api.example.com/schemas/query-result-data.json",
+  "title": "Query Result Data",
+  "description": "Data structure for SQL query execution results",
+  "type": "object",
+  "properties": {
+    "queryId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Unique identifier for the query execution"
+    },
+    "columns": {
+      "type": "array",
+      "description": "Column metadata for the result set",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { 
+            "type": "string",
+            "description": "Column name"
+          },
+          "type": { 
+            "type": "string",
+            "description": "Column data type"
+          },
+          "nullable": { 
+            "type": "boolean",
+            "description": "Whether the column allows null values"
+          }
+        },
+        "required": ["name", "type", "nullable"],
+        "additionalProperties": false
+      }
+    },
+    "rows": {
+      "type": "array",
+      "description": "Query result rows",
+      "items": {
+        "type": "object",
+        "description": "Row data as key-value pairs"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Query execution metadata",
+      "properties": {
+        "totalRows": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Total number of rows in the result set"
+        },
+        "affectedRows": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Number of rows affected by the query"
+        },
+        "executionTime": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Query execution time in milliseconds"
+        },
+        "command": { 
+          "type": "string",
+          "description": "SQL command type (SELECT, INSERT, UPDATE, etc.)"
+        },
+        "hasMore": { 
+          "type": "boolean",
+          "description": "Whether there are more rows available"
+        },
+        "actualRowCount": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Actual number of rows returned"
+        }
+      },
+      "required": ["totalRows", "executionTime", "command", "hasMore"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["queryId", "columns", "rows", "metadata"],
+  "additionalProperties": false
+}

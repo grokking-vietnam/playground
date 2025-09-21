@@ -1,0 +1,10 @@
+{
+  "$id": "https://api.example.com/schemas/connection-test-request.json",
+  "title": "Connection Test Request",
+  "description": "Request payload for testing database connections",
+  "allOf": [
+    {
+      "$ref": "https://api.example.com/schemas/connection-config.json"
+    }
+  ]
+}

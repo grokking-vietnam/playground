@@ -1,0 +1,40 @@
+{
+  "$id": "https://api.example.com/schemas/connection-config.json",
+  "title": "Database Connection Configuration",
+  "description": "Configuration for establishing a database connection",
+  "type": "object",
+  "properties": {
+    "host": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Database host address"
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Database port number"
+    },
+    "database": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Database name"
+    },
+    "username": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Database username"
+    },
+    "password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Database password"
+    },
+    "ssl": {
+      "type": "boolean",
+      "description": "Enable SSL connection"
+    }
+  },
+  "required": ["host", "port", "database", "username", "password"],
+  "additionalProperties": false
+}
