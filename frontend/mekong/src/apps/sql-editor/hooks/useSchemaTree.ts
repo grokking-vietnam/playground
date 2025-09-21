@@ -62,13 +62,6 @@ export function useSchemaTree(options: UseSchemaTreeOptions): UseSchemaTreeResul
     }
   }, [])
   
-  // Load schema on mount or connection change
-  useEffect(() => {
-    if (connectionId && autoLoad) {
-      loadSchema()
-    }
-  }, [connectionId, autoLoad])
-  
   // Load root schema nodes
   const loadSchema = useCallback(async () => {
     if (!connectionId || !serviceRef.current) {
@@ -89,6 +82,20 @@ export function useSchemaTree(options: UseSchemaTreeOptions): UseSchemaTreeResul
       setLoading(false)
     }
   }, [connectionId])
+  
+  // Load schema on mount or connection change
+  useEffect(() => {
+    if (connectionId && autoLoad) {
+      // Clear previous state when connection changes
+      setNodes([])
+      setError(null)
+      setSelectedNode(null)
+      setExpandedNodeIds(new Set())
+      
+      // Load new schema
+      loadSchema()
+    }
+  }, [connectionId, autoLoad]) // Removed loadSchema from dependencies to prevent infinite loop
   
   // Refresh schema (clear cache and reload)
   const refreshSchema = useCallback(async () => {

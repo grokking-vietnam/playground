@@ -67,19 +67,26 @@ export class SchemaMetadataService {
         return this.getSchemaChildren(connectionId, parentPath)
       }
 
-      const parentId = parentPath.join('.')
+      // Build the correct parent ID based on the connection structure
+      const parentId = `${connectionId}.${parentPath.join('.')}`
       const parentNode = cachedTree.nodeMap.get(parentId)
       
+      console.log(`Looking for parent node with ID: ${parentId}`)
+      console.log(`Found parent node:`, parentNode?.name, parentNode?.type)
+      
       if (!parentNode || !parentNode.hasChildren) {
+        console.log(`No parent node or no children for: ${parentId}`)
         return []
       }
 
       // If children already loaded, return them
       if (parentNode.children && parentNode.children.length > 0) {
+        console.log(`Returning ${parentNode.children.length} cached children for: ${parentNode.name}`)
         return parentNode.children
       }
 
       // Load children dynamically based on node type
+      console.log(`Loading children dynamically for: ${parentNode.name} (${parentNode.type})`)
       const children = await this.loadChildrenForNode(connectionId, parentNode)
       
       // Update the cached tree
@@ -170,7 +177,8 @@ export class SchemaMetadataService {
     this.cache.delete(connectionId)
     delete this.treeCache[connectionId]
     
-    // Reload schema
+    // Force reload schema
+    console.log(`Refreshing schema for connection: ${connectionId}`)
     await this.getConnectionSchema(connectionId)
   }
 
@@ -204,7 +212,13 @@ export class SchemaMetadataService {
   private transformToTreeNodes(introspectionResult: DatabaseIntrospectionResult): SchemaTreeNode[] {
     const { databases, connectionId } = introspectionResult
     
-    return databases.map(database => ({
+    console.log(`Transforming to tree nodes for connection: ${connectionId}`)
+    console.log(`Found ${databases.length} databases`)
+    
+    return databases.map(database => {
+      console.log(`Processing database: ${database.name} with ${database.schemas.length} schemas`)
+      
+      return {
       id: `${connectionId}.${database.name}`,
       name: database.name,
       type: 'database' as const,
@@ -216,23 +230,28 @@ export class SchemaMetadataService {
         collation: database.collation,
         sizeBytes: database.size
       },
-      children: database.schemas.map(schema => ({
-        id: `${connectionId}.${database.name}.${schema.name}`,
-        name: schema.name,
-        type: 'schema' as const,
-        icon: 'folder',
-        path: [database.name, schema.name],
-        parentId: `${connectionId}.${database.name}`,
-        hasChildren: schema.tables.length > 0 || schema.views.length > 0,
-        metadata: {
-          owner: schema.owner
-        },
-        children: [
-          ...schema.tables.map(table => this.createTableNode(connectionId, database.name, schema.name, table)),
-          ...schema.views.map(view => this.createViewNode(connectionId, database.name, schema.name, view))
-        ].filter(Boolean)
-      }))
-    }))
+      children: database.schemas.map(schema => {
+        const tableNodes = schema.tables.map(table => this.createTableNode(connectionId, database.name, schema.name, table))
+        const viewNodes = schema.views.map(view => this.createViewNode(connectionId, database.name, schema.name, view))
+        const allChildren = [...tableNodes, ...viewNodes].filter(Boolean)
+        
+        console.log(`Schema ${schema.name}: ${schema.tables.length} tables, ${schema.views.length} views, ${allChildren.length} total children`)
+        
+        return {
+          id: `${connectionId}.${database.name}.${schema.name}`,
+          name: schema.name,
+          type: 'schema' as const,
+          icon: 'folder',
+          path: [database.name, schema.name],
+          parentId: `${connectionId}.${database.name}`,
+          hasChildren: allChildren.length > 0,
+          metadata: {
+            owner: schema.owner
+          },
+          children: allChildren
+        }
+      })
+    }})
   }
 
   private createTableNode(connectionId: string, database: string, schema: string, table: any): SchemaTreeNode {

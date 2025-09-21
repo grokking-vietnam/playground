@@ -107,16 +107,35 @@ const getNodeDescription = (node: SchemaTreeNode) => {
   }
 }
 
-const SchemaTreeNodeComponent: React.FC<SchemaTreeNodeProps> = ({
+interface SchemaTreeNodeComponentProps extends SchemaTreeNodeProps {
+  expandedNodeIds?: Set<string>
+  selectedNodeId?: string
+}
+
+const SchemaTreeNodeComponent: React.FC<SchemaTreeNodeComponentProps> = ({
   node,
   level,
   isSelected,
   isExpanded,
   onExpand,
   onSelect,
-  onContextMenu
+  onContextMenu,
+  expandedNodeIds = new Set(),
+  selectedNodeId
 }) => {
   const hasChildren = node.hasChildren || (node.children && node.children.length > 0)
+  
+  // Debug logging
+  React.useEffect(() => {
+    if (node.type === 'schema') {
+      console.log(`Schema node ${node.name}:`, {
+        hasChildren,
+        childrenCount: node.children?.length || 0,
+        isExpanded,
+        children: node.children?.map(c => c.name) || []
+      })
+    }
+  }, [node, hasChildren, isExpanded])
   
   const handleToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -233,18 +252,20 @@ const SchemaTreeNodeComponent: React.FC<SchemaTreeNodeProps> = ({
       </div>
       
       {/* Child Nodes */}
-      {isExpanded && node.children && (
+      {isExpanded && node.children && node.children.length > 0 && (
         <div>
           {node.children.map((child) => (
             <SchemaTreeNodeComponent
               key={child.id}
               node={child}
               level={level + 1}
-              isSelected={isSelected}
-              isExpanded={false} // Child expansion would be controlled by parent
+              isSelected={selectedNodeId === child.id}
+              isExpanded={expandedNodeIds.has(child.id)}
               onExpand={onExpand}
               onSelect={onSelect}
               onContextMenu={onContextMenu}
+              expandedNodeIds={expandedNodeIds}
+              selectedNodeId={selectedNodeId}
             />
           ))}
         </div>
@@ -265,28 +286,13 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({
   searchQuery,
   searchFilters
 }) => {
-  const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(expandedNodeIds)
-  
-  // Update internal state when external expandedNodeIds changes
-  useEffect(() => {
-    setInternalExpandedNodes(expandedNodeIds)
-  }, [expandedNodeIds])
-  
+  // Use external expandedNodeIds directly instead of internal state
   const handleNodeExpand = useCallback((node: SchemaTreeNode) => {
-    const newExpanded = new Set(internalExpandedNodes)
-    
-    if (newExpanded.has(node.id)) {
-      newExpanded.delete(node.id)
-    } else {
-      newExpanded.add(node.id)
-    }
-    
-    setInternalExpandedNodes(newExpanded)
-    
+    console.log(`Expanding node: ${node.name} (${node.id})`)
     if (onNodeExpand) {
       onNodeExpand(node)
     }
-  }, [internalExpandedNodes, onNodeExpand])
+  }, [onNodeExpand])
   
   const handleNodeSelect = useCallback((node: SchemaTreeNode) => {
     if (onNodeSelect) {
@@ -349,10 +355,12 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({
           node={node}
           level={0}
           isSelected={selectedNodeId === node.id}
-          isExpanded={internalExpandedNodes.has(node.id)}
+          isExpanded={expandedNodeIds.has(node.id)}
           onExpand={handleNodeExpand}
           onSelect={handleNodeSelect}
           onContextMenu={handleNodeContextMenu}
+          expandedNodeIds={expandedNodeIds}
+          selectedNodeId={selectedNodeId}
         />
       ))}
     </div>
