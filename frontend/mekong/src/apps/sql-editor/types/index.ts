@@ -42,6 +42,28 @@ export type {
   SchemaQuery
 } from './schema';
 
+// Enhanced schema tree types
+export type {
+  SchemaTreeNode,
+  SchemaNodeMetadata,
+  ForeignKeyInfo,
+  DatabaseIntrospectionResult,
+  DatabaseInfo,
+  SchemaInfo,
+  TableInfo,
+  ViewInfo,
+  ColumnInfo,
+  IndexInfo,
+  ConstraintInfo,
+  FunctionInfo,
+  ProcedureInfo,
+  ParameterInfo,
+  SchemaSearchFilters,
+  SchemaSearchResult,
+  SchemaTreeCache,
+  SchemaSearchIndex
+} from './schema-tree';
+
 // Re-export commonly used types for convenience
 export type {
   DatabaseConnection,

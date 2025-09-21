@@ -36,6 +36,11 @@ import { useConnections } from "./hooks/useConnections"
 import { ConnectionForm } from "./components/connections/ConnectionForm"
 import { ConnectionList } from "./components/connections/ConnectionList"
 import { ConnectionStatus } from "./components/connections/ConnectionStatus"
+
+// Import real schema browser components
+import { SchemaTree } from "./components/browser/SchemaTree"
+import { useSchemaTree } from "./hooks/useSchemaTree"
+
 import { 
   DatabaseConnection, 
   ConnectionFormData, 
@@ -150,6 +155,13 @@ function SqlEditorPage() {
   const [showConnectionList, setShowConnectionList] = useState(false)
   const [editingConnection, setEditingConnection] = useState<DatabaseConnection | null>(null)
   
+  // Real schema tree state
+  const schemaTree = useSchemaTree({
+    connectionId: activeConnection?.id || '',
+    autoLoad: !!activeConnection, // Auto-load when there's an active connection
+    enableSearch: true
+  })
+  
   // Query tabs state
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
     { id: "tab-1", name: "Untitled query", query: "SELECT 1+1", isUnsaved: false }
@@ -194,6 +206,9 @@ function SqlEditorPage() {
   const [sqlAutocomplete, setSqlAutocomplete] = useState(true)
   const [queryMode, setQueryMode] = useState("standard") // "standard", "batch", "streaming"
   const [enableSqlTranslation, setEnableSqlTranslation] = useState(false)
+
+  // State for schema browser mode
+  const [useRealSchema, setUseRealSchema] = useState(true)
 
   // Enhanced editor state
   const [editorSettings, setEditorSettings] = useState<EditorSettings>({
@@ -929,11 +944,98 @@ function SqlEditorPage() {
             />
             <span className="text-sm text-muted-foreground">Show starred only</span>
           </div>
+
+          {/* Schema mode toggle */}
+          <div className="flex items-center justify-between mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+            <div className="flex items-center">
+              <span className="text-sm font-medium text-blue-700">
+                {activeConnection ? 'Live Schema' : 'Demo Mode'}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              {activeConnection && useRealSchema && (
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => schemaTree.refreshSchema()}
+                  className="text-xs h-6 px-2"
+                  title="Refresh schema"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              )}
+              <Button 
+                variant={useRealSchema && activeConnection ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseRealSchema(!useRealSchema)}
+                className="text-xs h-6"
+                disabled={!activeConnection}
+              >
+                {useRealSchema && activeConnection ? 'ON' : 'OFF'}
+              </Button>
+            </div>
+          </div>
         </div>
 
-              {/* Project Tree */}
+              {/* Schema Browser */}
               <div className="flex-1 overflow-auto p-2">
-                {projects.map((project) => (
+                {useRealSchema && activeConnection ? (
+                  /* Real Schema Tree */
+                  <div>
+                    {schemaTree.loading ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <Database className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+                        <p>Loading schema...</p>
+                        <p className="text-sm">Connecting to {activeConnection.name}</p>
+                      </div>
+                    ) : schemaTree.nodes.length > 0 ? (
+                      <SchemaTree
+                        connectionId={activeConnection.id}
+                        nodes={schemaTree.nodes}
+                        loading={schemaTree.loading}
+                        onNodeExpand={schemaTree.expandNode}
+                        onNodeSelect={schemaTree.selectNode}
+                        selectedNodeId={schemaTree.selectedNode?.id}
+                        expandedNodeIds={schemaTree.expandedNodeIds}
+                        searchQuery={schemaTree.searchQuery}
+                      />
+                    ) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        <Database className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p>No Data</p>
+                        <p className="text-sm">Unable to load schema from {activeConnection.name}</p>
+                        {activeConnection.status !== 'connected' && (
+                          <p className="text-xs text-red-600 mt-2">Connection status: {activeConnection.status}</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {schemaTree.error && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        Error: {schemaTree.error}
+                        <br />
+                        <span className="text-xs">Connection: {activeConnection.name} ({activeConnection.engine})</span>
+                      </div>
+                    )}
+                  </div>
+                ) : activeConnection ? (
+                  /* Connection exists but real schema is disabled */
+                  <div className="text-center text-muted-foreground py-8">
+                    <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p>Live schema disabled</p>
+                    <p className="text-sm">Enable "Live Schema" to see your database structure</p>
+                  </div>
+                ) : (
+                  /* No connection - show message and mock data */
+                  <div>
+                    <div className="text-center text-muted-foreground py-4 mb-4 bg-yellow-50 border border-yellow-200 rounded">
+                      <Database className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
+                      <p className="text-sm font-medium text-yellow-800">No Database Connection</p>
+                      <p className="text-xs text-yellow-700">Create a connection to see your database schema</p>
+                    </div>
+                    
+                    {/* Mock Project Tree for demo */}
+                    {projects.map((project) => (
                   <div key={project.id} className="mb-2">
                     {/* Project Node */}
                     <div 
@@ -999,7 +1101,9 @@ function SqlEditorPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                    ))}
+                  </div>
+                )}
               </div>
 
             {/* Resize Handle */}
