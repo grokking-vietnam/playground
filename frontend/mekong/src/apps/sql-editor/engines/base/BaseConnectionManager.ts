@@ -5,8 +5,8 @@
  * Provides common connection lifecycle management functionality.
  */
 
-import { ConnectionManager, ConnectionTestResult } from './interfaces'
-import { DatabaseConnection, ConnectionStatus, DatabaseEngine } from '../../types/connections'
+import { ConnectionManager } from './interfaces'
+import { DatabaseConnection, ConnectionStatus, ConnectionTestResult, DatabaseEngine } from '../../types/connections'
 
 /**
  * Abstract base connection manager
