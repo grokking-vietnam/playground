@@ -47,8 +47,10 @@ import {
   ENGINE_DISPLAY_NAMES,
   DatabaseEngine,
   Permission,
+  ExecutionStatus
+} from "./types"
+import type {
   QueryExecution,
-  ExecutionStatus,
   QueryResult,
   QueryError
 } from "./types"

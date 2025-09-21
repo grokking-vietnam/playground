@@ -43,7 +43,7 @@ export interface QueryExecution {
   /** Error information if failed */
   error?: QueryError
   /** Query results if successful */
-  results?: QueryResult
+  results?: any
   /** Additional execution metadata */
   metadata: ExecutionMetadata
 }

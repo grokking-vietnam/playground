@@ -8,7 +8,10 @@ import type {
   QueryResult, 
   QueryRow, 
   ColumnDefinition,
-  ResultFormattingOptions,
+  ResultFormattingOptions
+} from '../types'
+
+import {
   DEFAULT_FORMATTING_OPTIONS,
   getDataTypeGroup
 } from '../types'

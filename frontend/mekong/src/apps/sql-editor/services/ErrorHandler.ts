@@ -4,7 +4,8 @@
  * Handles and formats errors from query execution for user-friendly display.
  */
 
-import type { QueryError, ExecutionStatus } from '../types'
+import type { QueryError } from '../types'
+import { ExecutionStatus } from '../types'
 
 /**
  * Error category types

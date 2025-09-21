@@ -10,10 +10,13 @@ import type {
   QueryExecution,
   QueryResult,
   ExecutionOptions,
+  QueryError
+} from '../types'
+
+import {
   ExecutionStatus,
   ExecutionPriority,
   ExecutionMode,
-  QueryError,
   DEFAULT_EXECUTION_OPTIONS
 } from '../types'
 
