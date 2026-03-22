@@ -2,7 +2,8 @@ name: iac
 runtime:
   name: python
   options:
-    virtualenv: venv
+    toolchain: uv
+    virtualenv: .venv
 description: Infrastructure as code
 config:
   pulumi:tags:
@@ -10,3 +11,4 @@ config:
       pulumi:template: ""
 backend:
   url: https://api.pulumi.com
+stackConfigDir: configs
