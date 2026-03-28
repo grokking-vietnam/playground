@@ -9,6 +9,8 @@ config:
   pulumi:tags:
     value:
       pulumi:template: ""
+  docker:host:
+    value: unix:///var/run/docker.sock
 backend:
   url: https://api.pulumi.com
 stackConfigDir: configs
