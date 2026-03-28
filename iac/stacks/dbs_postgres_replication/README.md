@@ -35,24 +35,24 @@ With the API active on port `8000`, process this request path:
 ### 1. Initialize Logical Replication
 Logical architectures require explicit schemas and SQL bindings. Hit the setup endpoint which will initialize schema across nodes and configure the built-in PUBLICATION & SUBSCRIPTION link properly inside the PostgreSQL layer:
 ```bash
-curl -X POST "http://127.0.0.1:8000/setup-logical"
+curl -X POST "http://127.0.0.0:8000/setup-logical"
 ```
 
 ### 2. Stream Data to the Primary Node
 Insert data arbitrarily into the Master container:
 ```bash
-curl -X POST "http://127.0.0.1:8000/write?data=LogicalTestingRow"
+curl -X POST "http://127.0.0.0:8000/write?data=LogicalTestingRow"
 ```
 
 ### 3. Read it Off Both Endpoints!
 Query the physical binary copy:
 ```bash
-curl "http://127.0.0.1:8000/read-physical"
+curl "http://127.0.0.0:8000/read-physical"
 ```
 
 Query the active SQL replicated layout (which might take a split-second to propagate!):
 ```bash
-curl "http://127.0.0.1:8000/read-logical"
+curl "http://127.0.0.0:8000/read-logical"
 ```
 
 > [!NOTE]
