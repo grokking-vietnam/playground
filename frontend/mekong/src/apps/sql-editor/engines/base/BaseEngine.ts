@@ -2,7 +2,7 @@
  * Base Database Engine Implementation
  * 
  * Abstract base class that provides common functionality for all database engines.
- * Each specific engine (PostgreSQL, MySQL, SQLite) extends this class.
+ * Each specific engine (PostgreSQL, MySQL) extends this class.
  */
 
 import { 

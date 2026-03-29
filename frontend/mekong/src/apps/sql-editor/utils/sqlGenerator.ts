@@ -246,7 +246,6 @@ export class SQLGenerator {
       
       case DatabaseEngine.MYSQL:
       case DatabaseEngine.POSTGRESQL:
-      case DatabaseEngine.SQLITE:
         return 'SELECT 1 as test;'
       
       case DatabaseEngine.SPARK_SQL:
@@ -292,13 +291,6 @@ export class SQLGenerator {
         return {
           ...baseTemplates,
           createTable: 'CREATE TABLE table_name (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  name VARCHAR(255)\n);'
-        }
-      
-      case DatabaseEngine.SQLITE:
-        return {
-          ...baseTemplates,
-          createTable: 'CREATE TABLE table_name (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name TEXT\n);',
-          describe: 'PRAGMA table_info(table_name);'
         }
       
       case DatabaseEngine.SPARK_SQL:
