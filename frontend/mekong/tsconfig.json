@@ -27,7 +27,9 @@
   },
   "include": [
     "src",
-    "modern-app-env.d.ts"
+    "modern-app-env.d.ts",
+    "playwright.config.ts",
+    "tests"
   ],
   "exclude": [
     "node_modules"
