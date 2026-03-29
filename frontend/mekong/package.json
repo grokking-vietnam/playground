@@ -11,7 +11,10 @@
     "new": "modern new",
     "lint": "biome check",
     "prepare": "simple-git-hooks",
-    "upgrade": "modern upgrade"
+    "upgrade": "modern upgrade",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report playwright-report"
   },
   "engines": {
     "node": ">=16.18.1"
@@ -83,6 +86,7 @@
     "@biomejs/biome": "1.9.4",
     "@modern-js/app-tools": "2.68.11",
     "@modern-js/tsconfig": "2.68.11",
+    "@playwright/test": "1.52.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@tailwindcss/typography": "^0.5.16",
     "@types/jest": "~29.2.4",
