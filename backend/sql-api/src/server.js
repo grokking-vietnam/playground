@@ -12,6 +12,7 @@ import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import { queryRouter } from './routes/query.js'
 import { connectionRouter } from './routes/connection.js'
+import { pushRouter } from './routes/push-subscriptions.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 
@@ -70,6 +71,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/query', queryRouter)
 app.use('/api/connection', connectionRouter)
+app.use('/api/push', pushRouter)
 
 // Error handling middleware
 app.use(errorHandler)

@@ -1,56 +1,87 @@
-import { appTools, defineConfig } from '@modern-js/app-tools';
-import { statePlugin } from '@modern-js/plugin-state';
+import path from "node:path";
+import { appTools, defineConfig } from "@modern-js/app-tools";
+import { statePlugin } from "@modern-js/plugin-state";
+import { CopyRspackPlugin } from "@rspack/core";
 
 // https://modernjs.dev/en/configure/app/usage
 export default defineConfig({
-  runtime: {
-    router: true,
-    state: true,
-  },
-  tools: {
-    postcss: (config, { addPlugins }) => {
-      addPlugins([
-        require('tailwindcss'),
-        require('autoprefixer'),
-      ]);
-    },
-    rspack: (config) => {
-      // Suppress Monaco Editor dynamic require warnings
-      config.ignoreWarnings = config.ignoreWarnings || [];
-      config.ignoreWarnings.push(
-        // Ignore Monaco Editor dynamic require warnings
-        /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
-        // Additional Monaco Editor warnings
-        /node_modules[\/\\]monaco-editor/
-      );
+	runtime: {
+		router: true,
+		state: true,
+	},
+	tools: {
+		postcss: (config, { addPlugins }) => {
+			addPlugins([require("tailwindcss"), require("autoprefixer")]);
+		},
+		rspack: (config) => {
+			// Suppress Monaco Editor dynamic require warnings
+			config.ignoreWarnings = config.ignoreWarnings || [];
+			config.ignoreWarnings.push(
+				// Ignore Monaco Editor dynamic require warnings
+				/Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+				// Additional Monaco Editor warnings
+				/node_modules[\/\\]monaco-editor/,
+			);
 
-      // Ensure Monaco Editor works correctly with Rspack
-      config.resolve = config.resolve || {};
-      config.resolve.fallback = config.resolve.fallback || {};
-      config.resolve.fallback.path = false;
-      config.resolve.fallback.fs = false;
+			// Ensure Monaco Editor works correctly with Rspack
+			config.resolve = config.resolve || {};
+			config.resolve.fallback = config.resolve.fallback || {};
+			config.resolve.fallback.path = false;
+			config.resolve.fallback.fs = false;
 
-      return config;
-    },
-  },
-  plugins: [
-    appTools({
-      bundler: 'rspack', // Using Rspack for better performance
-    }),
-    statePlugin(),
-  ],
-  server: {
-    port: 3000,
-  },
-  // Environment variables for microfrontend URLs
-  define: {
-    'process.env.SHELL_URL': JSON.stringify(process.env.SHELL_URL || 'http://localhost:3001'),
-    'process.env.USER_MANAGEMENT_URL': JSON.stringify(process.env.USER_MANAGEMENT_URL || 'http://localhost:3002'),
-    'process.env.PERMISSION_CONTROL_URL': JSON.stringify(process.env.PERMISSION_CONTROL_URL || 'http://localhost:3003'),
-    'process.env.WORKFLOW_MANAGEMENT_URL': JSON.stringify(process.env.WORKFLOW_MANAGEMENT_URL || 'http://localhost:3004'),
-    'process.env.SQL_EDITOR_URL': JSON.stringify(process.env.SQL_EDITOR_URL || 'http://localhost:3005'),
-    'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
-    // Also make it available on window object for runtime access
-    'window.NEXT_PUBLIC_API_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
-  },
+			// Copy the public/ directory to the build output so that the PWA
+			// manifest, service worker and icons are served at the root path.
+			config.plugins = config.plugins || [];
+			config.plugins.push(
+				new CopyRspackPlugin({
+					patterns: [
+						{
+							from: path.resolve(__dirname, "public"),
+							to: ".",
+							noErrorOnMissing: true,
+						},
+					],
+				}),
+			);
+
+			return config;
+		},
+	},
+	plugins: [
+		appTools({
+			bundler: "rspack", // Using Rspack for better performance
+		}),
+		statePlugin(),
+	],
+	server: {
+		port: 3000,
+	},
+	// Environment variables for microfrontend URLs
+	define: {
+		"process.env.SHELL_URL": JSON.stringify(
+			process.env.SHELL_URL || "http://localhost:3001",
+		),
+		"process.env.USER_MANAGEMENT_URL": JSON.stringify(
+			process.env.USER_MANAGEMENT_URL || "http://localhost:3002",
+		),
+		"process.env.PERMISSION_CONTROL_URL": JSON.stringify(
+			process.env.PERMISSION_CONTROL_URL || "http://localhost:3003",
+		),
+		"process.env.WORKFLOW_MANAGEMENT_URL": JSON.stringify(
+			process.env.WORKFLOW_MANAGEMENT_URL || "http://localhost:3004",
+		),
+		"process.env.SQL_EDITOR_URL": JSON.stringify(
+			process.env.SQL_EDITOR_URL || "http://localhost:3005",
+		),
+		"process.env.NEXT_PUBLIC_API_URL": JSON.stringify(
+			process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+		),
+		"process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY": JSON.stringify(
+			process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "",
+		),
+		// Also make it available on window object for runtime access
+		"window.NEXT_PUBLIC_API_URL": JSON.stringify(
+			process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+		),
+	},
 });
